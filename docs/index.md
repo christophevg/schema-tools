@@ -37,7 +37,7 @@ ConfigJSONObject(len=2, line=1, column=1)
 ... - 3
 ... ''')
 >>> y
-ConfigYamlObject(len=2, line=1, column=0)
+ObjectNode(len=2, line=1, column=0)
 >>> y()
 {'hello': 'world', 'count': [1, 2, 3]}
 

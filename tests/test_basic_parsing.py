@@ -36,18 +36,18 @@ def test_comparable_parsing():
 
 
 from jsoncfg.config_classes import ConfigJSONObject, ConfigJSONArray, ConfigJSONScalar
-from schema_tools.yaml      import ConfigYamlObject, ConfigYamlArray, ConfigYamlScalar
+from schema_tools.nodes     import ObjectNode, ListNode, ValueNode
 
 def dump(ast, indent=0):
   txt = ""
-  if isinstance(ast, (ConfigYamlObject, ConfigJSONObject)):
+  if isinstance(ast, (ObjectNode, ConfigJSONObject)):
     for key, value in ast:
       txt += "  " * indent + "@{}".format(value._line) + " " + key + "\n"
       # expect key to be on same line as value
       txt += dump(value, indent+1)
-  elif isinstance(ast, (ConfigYamlArray, ConfigJSONArray)):
+  elif isinstance(ast, (ListNode, ConfigJSONArray)):
     for item in ast:
       txt += dump(item, indent+1)
-  elif isinstance(ast, (ConfigYamlScalar, ConfigJSONScalar)):
+  elif isinstance(ast, (ValueNode, ConfigJSONScalar)):
     txt += "  " * indent + "@{}".format(ast._line) + " " + str(ast()) + "\n"
   return txt
