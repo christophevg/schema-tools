@@ -5,8 +5,8 @@ level.
 
 ## Loading
 
-- introduce abstract nodes (on yaml)
-- implement wrapper for json
+- add tests to check column/line parsing
+- add tests to check __eq__
 
 ## Selector Support
 

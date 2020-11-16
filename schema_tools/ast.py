@@ -20,6 +20,13 @@ class ValueNode(SchemaNode):
   def __call__(self):
     return self._value
 
+  def __eq__(self, other):
+    if not isinstance(other, self.__class__): return NotImplemented
+    return self._value == other._value
+
+  def __hash__(self):
+    return hash((self._value, self._line, self._column))
+
 class ListNode(SchemaNode):
   def __init__(self, items, line, column):
     super().__init__(line, column)
@@ -42,6 +49,12 @@ class ListNode(SchemaNode):
 
   def __call__(self):
     return [ v() for v in self ]
+
+  def __eq__(self, other):
+    if not isinstance(other, self.__class__): return NotImplemented
+    for index, _ in enumerate(self._items):
+      if self._items[index] != other._items[index]: return False
+    return True
 
 class ObjectNode(SchemaNode):
   def __init__(self, items, line, column):
@@ -66,31 +79,31 @@ class ObjectNode(SchemaNode):
     )
 
   def __len__(self):
-      return len(self._items)
+    return len(self._items)
 
   def __delitem__(self, key):
-      del self._items[key]
+    del self._items[key]
 
   def clear(self):
-      return self._items.clear()
+    return self._items.clear()
 
   def copy(self):
-      return self._items.copy()
+    return self._items.copy()
 
   def has_key(self, k):
-      return k in self._items
+    return k in self._items
 
   def __contains__(self, k):
     return k in self._items
 
   def update(self, *args, **kwargs):
-      return self._items.update(*args, **kwargs)
+    return self._items.update(*args, **kwargs)
 
   def keys(self):
-      return self._items.keys()
+    return self._items.keys()
 
   def values(self):
-      return self._items.values()
+    return self._items.values()
 
   def items(self):
     return self._items.items()
@@ -99,3 +112,9 @@ class ObjectNode(SchemaNode):
     return {
       k : v() for k, v in self.items()
     }
+
+  def __eq__(self, other):
+    if not isinstance(other, self.__class__): return NotImplemented
+    for key in self._items.keys():
+      if self._items[key] != other._items[key]: return False
+    return True

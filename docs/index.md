@@ -11,7 +11,7 @@
 
 ## Features at a Glance
 
-- support for (loading of) Json and Yaml schemas with additional access to line and column information
+- support for (loading of) Json and Yaml schemas with additional access to line and column information as an Abstract Syntax Tree (AST)
 
 ```pycon
 >>> from schema_tools import json
@@ -24,7 +24,7 @@
 ...   ]
 ... }''')
 >>> j
-ConfigJSONObject(len=2, line=1, column=1)
+ObjectNode(len=2, line=1, column=1)
 >>> j()
 {'hello': 'world', 'count': [1, 2, 3]}
 
@@ -37,9 +37,15 @@ ConfigJSONObject(len=2, line=1, column=1)
 ... - 3
 ... ''')
 >>> y
-ObjectNode(len=2, line=1, column=0)
+ObjectNode(len=2, line=1, column=1)
 >>> y()
 {'hello': 'world', 'count': [1, 2, 3]}
+
+>>> for k, v in y:
+...   print(k, v)
+... 
+hello ValueNode(value=world, line=2, column=9)
+count ListNode(len=3, line=3, column=1)
 
 >>> from schema_tools.utils import node_location
 >>> l = node_location(j.count)
@@ -53,6 +59,60 @@ NodeLocation(3, 0)
 NodeLocation(3, 13)
 >>> node_location(y["count"])
 NodeLocation(3, 0)
+```
+
+- a schema oriented object model
+
+```pycon
+>>> from schema_tools import json, model
+>>> ast = json.loads('''
+... {
+...   "$schema": "http://json-schema.org/draft-07/schema#",
+...   "$id": "test",
+...   "title": "a title",
+...   "description": "a description",
+...   "version": "123",
+...   "type": "object",
+...   "properties" : {
+...     "home" : {
+...       "anyOf" : [
+...         { "$ref" : "#/definitions/address" },
+...         { "$ref" : "#/definitions/id"      }
+...       ]
+...     }
+...   },
+...   "definitions" : {
+...     "id" : {
+...       "type" : "string"
+...     },
+...     "address" : {
+...       "type" : "object",
+...       "properties" : {
+...         "url": {
+...           "type": "string",
+...           "format": "uri-reference"
+...         }
+...       },
+...       "additionalProperties" : false,
+...       "required" : [
+...         "url"
+...       ]
+...     } 
+...   }
+... }''')
+>>> ast
+ObjectNode(len=8, line=2, column=1)
+>>> schema = model.load(ast)
+>>> schema
+ObjectSchema(properties=1)
+>>> schema.properties[0]
+Property(name=home, definition=AnyOf(options=2))
+>>> schema.properties[0].definition.options[1]
+Reference(ref=#/definitions/id)
+>>> schema.properties[0].definition.options[1].resolve()
+StringSchema(format=None, const=None, default=None)
+>>> schema.properties[0].definition.options[1].resolve().parent.name
+'id'
 ```
 
 - access using ref-like selectors (e.g. "properties.some_object.some_property")
