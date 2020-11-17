@@ -21,13 +21,16 @@ package_title: Schema Tools
 requires:
 - json-cfg
 - pyyaml
+- requests
+- requests-file
 scripts: []
-your_author_name: Christophe VG
-your_email_address: contact@christophe.vg
-your_full_name: Christophe Van Ginneken
-your_name: Christophe VG
 skip:
 - MANIFEST.in
 - docs
 - tests
 - (package_module_name)
+- requirements.txt
+your_author_name: Christophe VG
+your_email_address: contact@christophe.vg
+your_full_name: Christophe Van Ginneken
+your_name: Christophe VG

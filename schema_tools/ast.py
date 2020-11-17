@@ -25,7 +25,7 @@ class ValueNode(SchemaNode):
     return self._value == other._value
 
   def __hash__(self):
-    return hash((self._value, self._line, self._column))
+    return hash( (self._value, self._line, self._column) )
 
 class ListNode(SchemaNode):
   def __init__(self, items, line, column):

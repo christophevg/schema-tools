@@ -115,13 +115,54 @@ StringSchema(format=None, const=None, default=None)
 'id'
 ```
 
-- access using ref-like selectors (e.g. "properties.some_object.some_property")
+- (re) generate dict/textual representation
 
-**TODO: add example**
+```pycon
+>>> from schema_tools import json, model
+>>> ast = json.load("tests/schemas/json-schema-draft-07.json")
+>>> schema = model.load(ast)
+>>> schema.to_dict()
+{'$schema': 'http://json-schema.org/draft-07/schema#', '$id': 'http://json-schema.org/draft-07/schema#', 'title': 'Core schema meta-schema', 'type': ['object', 'boolean'],
+(...)
+>>> print(json.dumps(schema.to_dict())
+... )
+{
+  "$id": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "default": true,
+  "definitions": {
+(...)
+```
+
+- use property selectors - across schema boundaries ;-)
+
+```pycon
+>>> from schema_tools import json, model
+>>> schema = model.load(json.load("tests/schemas/invoice.json"))
+>>> amount = schema.select("lines.price.amount")
+>>> amount.parent.parent
+ObjectSchema($schema=http://json-schema.org/draft-07/schema#, $id=file:tests/schemas/money.json, type=object, version=1, additionalProperties=False, required=['amount', 'currency'], properties=2, definitions=0)
+```
 
 - define mapping between schemas with mapping validation
 
-**TODO: add example**
+```pycon
+>>> from schema_tools import json, model
+>>> source = model.load(json.load("tests/schemas/product.json")).select("cost.amount")
+>>> target = model.load(json.load("tests/schemas/invoice.json")).select("lines.price.amount")
+>>> from schema_tools.mapping import Mapping
+>>> m = Mapping(source, target)
+>>> m.is_valid
+True
+>>> target = model.load(json.load("tests/schemas/invoice.json")).select("lines.price.currency")
+>>> m = Mapping(source, target)
+>>> m.is_valid
+False
+>>> print(m.status)
+source:IntegerSchema(type=integer, location=NodeLocation(line=7, column=15))
+target:StringSchema(type=string, location=NodeLocation(line=10, column=17))
+source type 'IntegerSchema' doesn't match target type 'StringSchema'
+```
 
 ## Contents
 

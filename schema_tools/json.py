@@ -1,3 +1,4 @@
+import json
 import jsoncfg
 from jsoncfg.config_classes import ConfigJSONObject, ConfigJSONArray, ConfigJSONScalar
 
@@ -9,6 +10,9 @@ def load(path):
 
 def loads(source):
   return JsonConfigMapper().visit(jsoncfg.loads_config(source))
+
+def dumps(obj, indent=2, sort_keys=True):
+  return json.dumps(obj, indent=indent, sort_keys=sort_keys)
 
 
 class JsonConfigMapper(Visitor):

@@ -23,6 +23,8 @@ CLASSIFIERS      = [
 INSTALL_REQUIRES = [
   "json-cfg",
   "pyyaml",
+  "requests",
+  "requests-file",
   
 ]
 ENTRY_POINTS = {

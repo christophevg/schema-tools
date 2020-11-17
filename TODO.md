@@ -10,8 +10,6 @@ level.
 
 ## Selector Support
 
-- all
-
 ## Mapping Support
 
-- all
+- MappingCollection
