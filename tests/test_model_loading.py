@@ -148,7 +148,8 @@ def test_ref():
   assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "home"
-  assert isinstance(schema.properties[0].definition, Reference)
+  assert schema.properties[0].is_ref()
+  assert isinstance(schema.properties[0]._definition, Reference)
 
 def test_anyof():
   json_src = """{

@@ -60,9 +60,11 @@ def test_external_references(asset):
 
   schema = loads(json_src)
   
-  assert( isinstance(schema,                            ObjectSchema) )
-  assert( isinstance(schema.property("home"),           Reference)    )
-  assert( isinstance(schema.property("home").resolve(), StringSchema) )
+  assert isinstance(schema,                   ObjectSchema)
+  home = schema.property("home", return_definition=False)
+  assert home.is_ref()
+  assert isinstance(home._definition,         Reference)
+  assert isinstance(schema.property("home"),  StringSchema)
 
   try:
     schema.property("business").resolve()
@@ -83,6 +85,8 @@ def test_external_reference_with_fragment(asset):
 
   schema = loads(json_src)
   
-  assert( isinstance(schema,                               ObjectSchema) )
-  assert( isinstance(schema.property("foreign"),           Reference)    )
-  assert( isinstance(schema.property("foreign").resolve(), StringSchema) )
+  assert isinstance(schema, ObjectSchema)
+  foreign = schema.property("foreign", return_definition=False)
+  assert foreign.is_ref()
+  assert isinstance(foreign._definition, Reference)
+  assert isinstance(schema.property("foreign"), StringSchema)
