@@ -12,6 +12,8 @@ def node_location(node):
       node.__class__.__name__
     ))
 
+class VisitorException(Exception): pass
+
 class Visitor(object):
   def __init__(self, value_class, list_class, object_class):
     self.value_class  = value_class
@@ -19,15 +21,23 @@ class Visitor(object):
     self.object_class = object_class
 
   def visit(self, obj):
-    if isinstance(obj, self.object_class):
-      return self.visit_object(obj)
-    elif isinstance(obj, self.list_class):
-      return self.visit_list(obj)
-    elif isinstance(obj, self.value_class):
-      return self.visit_value(obj)
-    else:
-      raise TypeError("Node type '{}' is not supported by '{}'".format(
-        obj.__class__.__name__, self.__class__.__name__
+    try:
+      if isinstance(obj, self.object_class):
+        return self.visit_object(obj)
+      elif isinstance(obj, self.list_class):
+        return self.visit_list(obj)
+      elif isinstance(obj, self.value_class):
+        return self.visit_value(obj)
+      else:
+        raise TypeError("Node type '{}' is not supported by '{}'".format(
+          obj.__class__.__name__, self.__class__.__name__
+        ))
+    except VisitorException as e:
+      raise e
+    except Exception as e:
+      raise VisitorException("Failed to visit '{}', due to '{}'".format(
+        repr(obj),
+        str(e)
       ))
 
   def visit_value(self, value_node):

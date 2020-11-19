@@ -4,7 +4,7 @@ from yaml.loader import SafeLoader
 from schema_tools.ast import ValueNode, ListNode, ObjectNode
 
 def load(path):
-  return yaml.load(path, Loader=YamlSchemaLoader)
+  return yaml.load(str(path), Loader=YamlSchemaLoader)
 
 def loads(src):
   return yaml.load(src, Loader=YamlSchemaLoader)

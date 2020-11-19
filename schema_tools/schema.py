@@ -69,9 +69,11 @@ class Schema(object):
 class ObjectSchema(Schema):
   def __init__(self, properties=[], definitions=[], **kwargs):
     super().__init__(**kwargs)
+    if properties is None: properties = []
     self.properties = properties
     for prop in self.properties:
       prop.parent = self
+    if definitions is None: definitions = []
     self.definitions = definitions
     for definition in self.definitions:
       definition.parent = self
@@ -156,11 +158,11 @@ class ArraySchema(Schema):
     self.items = items
     if isinstance(self.items, Schema):
       self.items.parent = self
-    elif isinstance(self.items, bool):
+    elif isinstance(self.items, (list, bool)) or self.items is None:
       pass
     else:
       raise ValueError("unsupported items type: '{}'".format(
-        self.items.__class__.__type__)
+        self.items.__class__.__name__)
       )
 
   def _more_repr(self):
@@ -313,12 +315,12 @@ class NodesMapper(ASTVisitor):
     properties["location"] = self.location(object_node)
     if defines_object(properties):
       # properties and definitions bubble up as Generic Schemas
-      if "properties" in properties:
+      if "properties" in properties and properties["properties"]:
         properties["properties"] = [
           Property(name, definition) \
           for name, definition in properties["properties"].items()
         ]
-      if "definitions" in properties:
+      if "definitions" in properties and properties["definitions"]:
         properties["definitions"] = [
           Definition(name, definition) \
           for name, definition in properties["definitions"].items()
