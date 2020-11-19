@@ -11,7 +11,7 @@ def test_simple_string_mapping(asset):
   m = Mapping(source, target)
 
   assert m.is_valid
-  assert not m.status
+  assert not m.errors
 
 def test_different_value_schemas(asset):
   source = load(asset("product.json")).select("cost.amount")
@@ -23,4 +23,4 @@ def test_different_value_schemas(asset):
   m = Mapping(source, target)
 
   assert not m.is_valid
-  assert m.status
+  assert m.errors

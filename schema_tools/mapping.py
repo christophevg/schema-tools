@@ -11,7 +11,7 @@ class Mapping(object):
     return self._validate()
   
   @property
-  def status(self):
+  def errors(self):
     if not self.is_valid:
       return "\n".join([str(self)] + self.validation)
     return None
