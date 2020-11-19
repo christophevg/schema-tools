@@ -63,9 +63,54 @@ NodeLocation(3, 0)
 
 - a schema oriented object model
 
+<!---
+from schema_tools.schema import loads
+json_src = '''
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "test",
+  "title": "a title",
+  "description": "a description",
+  "version": "123",
+  "type": "object",
+  "properties" : {
+    "home" : {
+      "anyOf" : [
+        { "$ref" : "#/definitions/address" },
+        { "$ref" : "#/definitions/id"      }
+      ]
+    }
+  },
+  "definitions" : {
+    "id" : {
+      "type" : "string"
+    },
+    "address" : {
+      "type" : "object",
+      "properties" : {
+        "url": {
+          "type": "string",
+          "format": "uri-reference"
+        }
+      },
+      "additionalProperties" : false,
+      "required" : [
+        "url"
+      ]
+    } 
+  }
+}'''
+schema = loads(json_src)
+schema
+schema.properties[0]
+schema.properties[0].definition.options[1]
+schema.properties[0].definition.options[1].resolve()
+schema.properties[0].definition.options[1].resolve().parent.name
+-->
+
 ```pycon
->>> from schema_tools import json, model
->>> ast = json.loads('''
+>>> from schema_tools.schema import loads
+>>> json_src = '''
 ... {
 ...   "$schema": "http://json-schema.org/draft-07/schema#",
 ...   "$id": "test",
@@ -99,64 +144,103 @@ NodeLocation(3, 0)
 ...       ]
 ...     } 
 ...   }
-... }''')
->>> ast
-ObjectNode(len=8, line=2, column=1)
->>> schema = model.load(ast)
+... }'''
+>>> schema = loads(json_src)
 >>> schema
-ObjectSchema(properties=1)
+ObjectSchema($schema=http://json-schema.org/draft-07/schema#, $id=test, title=a title, description=a description, version=123, type=object, properties=1, definitions=2, location=NodeLocation(line=2, column=1))
 >>> schema.properties[0]
-Property(name=home, definition=AnyOf(options=2))
+Property(name=home, definition=AnyOf(options=2, location=NodeLocation(line=10, column=14)), location=None)
 >>> schema.properties[0].definition.options[1]
 Reference(ref=#/definitions/id)
 >>> schema.properties[0].definition.options[1].resolve()
-StringSchema(format=None, const=None, default=None)
+StringSchema(type=string, location=NodeLocation(line=18, column=12))
 >>> schema.properties[0].definition.options[1].resolve().parent.name
 'id'
 ```
 
 - (re) generate dict/textual representation
 
+<!---
+import json
+from schema_tools.schema import load
+schema = load("tests/schemas/json-schema-draft-07.json")
+d = schema.to_dict()
+s = json.dumps(d, indent=2, sort_keys=True)
+print(s[:150], "{}\n...\n{}".format(s[:147], s[-83:]))
+-->
+
 ```pycon
->>> from schema_tools import json, model
->>> ast = json.load("tests/schemas/json-schema-draft-07.json")
->>> schema = model.load(ast)
->>> schema.to_dict()
-{'$schema': 'http://json-schema.org/draft-07/schema#', '$id': 'http://json-schema.org/draft-07/schema#', 'title': 'Core schema meta-schema', 'type': ['object', 'boolean'],
-(...)
->>> print(json.dumps(schema.to_dict())
-... )
+>>> import json
+>>> from schema_tools.schema import load
+>>> schema = load("tests/schemas/json-schema-draft-07.json")
+>>> d = schema.to_dict()
+>>> s = json.dumps(d, indent=2, sort_keys=True)
+>>> print(s[:150], "{}\n...\n{}".format(s[:147], s[-83:]))
 {
   "$id": "http://json-schema.org/draft-07/schema#",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "default": true,
   "definitions": {
-(...)
+   {
+  "$id": "http://json-schema.org/draft-07/schema#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "default": true,
+  "definitions": {
+...
+  "title": "Core schema meta-schema",
+  "type": [
+    "object",
+    "boolean"
+  ]
+}
 ```
 
 - use property selectors - across schema boundaries ;-)
 
+<!---
+from schema_tools.schema import load
+schema = load("tests/schemas/invoice.json")
+amount = schema.select("lines.price.amount")
+amount.parent.parent
+-->
+
 ```pycon
->>> from schema_tools import json, model
->>> schema = model.load(json.load("tests/schemas/invoice.json"))
+>>> from schema_tools.schema import load
+>>> schema = load("tests/schemas/invoice.json")
 >>> amount = schema.select("lines.price.amount")
 >>> amount.parent.parent
-ObjectSchema($schema=http://json-schema.org/draft-07/schema#, $id=file:tests/schemas/money.json, type=object, version=1, additionalProperties=False, required=['amount', 'currency'], properties=2, definitions=0)
+ObjectSchema($schema=http://json-schema.org/draft-07/schema#, $id=file:tests/schemas/money.json, type=object, version=1, additionalProperties=False, required=['amount', 'currency'], properties=2, definitions=0, location=NodeLocation(line=1, column=1))
 ```
 
 - define mapping between schemas with mapping validation
 
+<!---
+from schema_tools.schema import load
+source = load("tests/schemas/product.json").select("cost.amount")
+target = load("tests/schemas/invoice.json").select("lines.price.amount")
+from schema_tools.mapping import Mapping
+m = Mapping(source, target)
+m.is_valid
+target = load("tests/schemas/invoice.json").select("lines.price.currency")
+m = Mapping(source, target)
+m.is_valid
+False
+print(m.status)
+-->
+
 ```pycon
->>> from schema_tools import json, model
->>> source = model.load(json.load("tests/schemas/product.json")).select("cost.amount")
->>> target = model.load(json.load("tests/schemas/invoice.json")).select("lines.price.amount")
+>>> from schema_tools.schema import load
+>>> source = load("tests/schemas/product.json").select("cost.amount")
+>>> target = load("tests/schemas/invoice.json").select("lines.price.amount")
 >>> from schema_tools.mapping import Mapping
 >>> m = Mapping(source, target)
 >>> m.is_valid
 True
->>> target = model.load(json.load("tests/schemas/invoice.json")).select("lines.price.currency")
+>>> target = load("tests/schemas/invoice.json").select("lines.price.currency")
 >>> m = Mapping(source, target)
 >>> m.is_valid
+False
+>>> False
 False
 >>> print(m.status)
 source:IntegerSchema(type=integer, location=NodeLocation(line=7, column=15))

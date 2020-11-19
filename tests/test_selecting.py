@@ -1,4 +1,4 @@
-from schema_tools import json, model
+from schema_tools.schema import loads, StringSchema, ObjectSchema, Definition
 
 def test_simple_selections():
   json_src = """{
@@ -14,12 +14,11 @@ def test_simple_selections():
   }
   """
   
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema,                    model.ObjectSchema)
-  assert isinstance(schema.select("home"),     model.StringSchema)
-  assert isinstance(schema.select("business"), model.StringSchema)
+  assert isinstance(schema,                    ObjectSchema)
+  assert isinstance(schema.select("home"),     StringSchema)
+  assert isinstance(schema.select("business"), StringSchema)
 
 def test_nested_selections():
   json_src = """{
@@ -42,13 +41,12 @@ def test_nested_selections():
   }
   """
   
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema,                                model.ObjectSchema)
-  assert isinstance(schema.select("home"),                 model.ObjectSchema)
-  assert isinstance(schema.select("home.address"),         model.ObjectSchema)
-  assert isinstance(schema.select("home.address.street"),  model.StringSchema)
+  assert isinstance(schema,                                ObjectSchema)
+  assert isinstance(schema.select("home"),                 ObjectSchema)
+  assert isinstance(schema.select("home.address"),         ObjectSchema)
+  assert isinstance(schema.select("home.address.street"),  StringSchema)
   assert schema.select("home.address.phone") is None
 
 def test_reference_to_definition_selections():
@@ -77,13 +75,12 @@ def test_reference_to_definition_selections():
   }
   """
   
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema,                                model.ObjectSchema)
-  assert isinstance(schema.select("home"),                 model.ObjectSchema)
-  assert isinstance(schema.select("home.address"),         model.ObjectSchema)
-  assert isinstance(schema.select("home.address.street"),  model.StringSchema)
+  assert isinstance(schema,                                ObjectSchema)
+  assert isinstance(schema.select("home"),                 ObjectSchema)
+  assert isinstance(schema.select("home.address"),         ObjectSchema)
+  assert isinstance(schema.select("home.address.street"),  StringSchema)
 
 def test_anyof_refs():
   json_src = """{
@@ -128,24 +125,23 @@ def test_anyof_refs():
   }
   """
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
 
   home     = schema.select("home.url")
   business = schema.select("business.url")
 
-  assert isinstance(home, model.StringSchema)
-  assert isinstance(business, model.StringSchema)
+  assert isinstance(home, StringSchema)
+  assert isinstance(business, StringSchema)
 
   # home = string <- property <- object <- definition
-  assert isinstance(home.parent.parent.parent, model.Definition)
+  assert isinstance(home.parent.parent.parent, Definition)
   assert home.parent.parent.parent.name == "address"
-  assert isinstance(business.parent.parent.parent, model.Definition)
+  assert isinstance(business.parent.parent.parent, Definition)
   assert business.parent.parent.parent.name == "address"
 
   assert home is business
 
-def test_external_reference_with_fragment(schema):
+def test_external_reference_with_fragment(asset):
   json_src = """{
     "type": "object",
     "properties" : {
@@ -154,9 +150,8 @@ def test_external_reference_with_fragment(schema):
       }
     }
   }
-  """.replace("%%%%", schema("money.json"))
+  """.replace("%%%%", asset("money.json"))
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert( isinstance(schema.select("foreign.currency"), model.StringSchema) )
+  assert( isinstance(schema.select("foreign.currency"), StringSchema) )

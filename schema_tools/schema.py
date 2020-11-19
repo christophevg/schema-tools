@@ -7,8 +7,15 @@ from pathlib import Path
 from schema_tools.utils import ASTVisitor
 from schema_tools       import json, yaml
 
-def load(node):
-  return NodesMapper().visit(node)
+def build(nodes):
+  return NodesMapper().visit(nodes)
+
+def load(path, parser=json):
+  return build(parser.load(path))
+
+def loads(src, parser=json):
+  return build(parser.loads(src))
+
 
 class Schema(object):
   args = {}
@@ -259,10 +266,10 @@ class Reference(Schema):
 
     src = doc.text
     try:
-      return load(json.loads(src))
+      return loads(src)
     except:
       try:
-        return load(yaml.loads(src))
+        return loads(src, parser=yaml)
       except Exception as e:
         raise ValueError("unable to parse '{}', due to '{}'".format(url, str(e)))
 

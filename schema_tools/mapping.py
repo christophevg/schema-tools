@@ -1,4 +1,4 @@
-from schema_tools import model
+from schema_tools.schema import ValueSchema
 
 class Mapping(object):
   def __init__(self, source, target):
@@ -21,8 +21,8 @@ class Mapping(object):
   
   def _validate(self):
     self.validation = []
-    if isinstance(self.source, model.ValueSchema) and  \
-       isinstance(self.target, model.ValueSchema):
+    if isinstance(self.source, ValueSchema) and  \
+       isinstance(self.target, ValueSchema):
      return self._validate_value_schemas()
     self.validation.append(
       "can't compare source '{}' with target '{}'".format(

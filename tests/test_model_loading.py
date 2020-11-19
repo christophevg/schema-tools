@@ -1,4 +1,4 @@
-from schema_tools import json, model
+from schema_tools.schema import loads, StringSchema, ObjectSchema, Reference, AnyOf
 
 def test_string_schema():
   json_src = """{
@@ -12,10 +12,9 @@ def test_string_schema():
   }
   """
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema, model.StringSchema)
+  assert isinstance(schema, StringSchema)
 
 def test_object_schema():
   json_src = """{
@@ -34,13 +33,12 @@ def test_object_schema():
   }
   """
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema, model.ObjectSchema)
+  assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "url"
-  assert isinstance(schema.properties[0].definition, model.StringSchema)
+  assert isinstance(schema.properties[0].definition, StringSchema)
 
 def test_nested_object_schema():
   json_src = """{
@@ -68,16 +66,15 @@ def test_nested_object_schema():
   }
   """
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema, model.ObjectSchema)
+  assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "address"
-  assert isinstance(schema.properties[0].definition, model.ObjectSchema)
+  assert isinstance(schema.properties[0].definition, ObjectSchema)
   assert len(schema.properties[0].definition.properties) == 1
   assert schema.properties[0].definition.properties[0].name == "url"
-  assert isinstance(schema.properties[0].definition.properties[0].definition, model.StringSchema)
+  assert isinstance(schema.properties[0].definition.properties[0].definition, StringSchema)
 
 def test_definitions():
   json_src = """{
@@ -105,16 +102,15 @@ def test_definitions():
   }
   """
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema, model.ObjectSchema)
+  assert isinstance(schema, ObjectSchema)
   assert len(schema.definitions) == 1
   assert schema.definitions[0].name == "address"
-  assert isinstance(schema.definitions[0].definition, model.ObjectSchema)
+  assert isinstance(schema.definitions[0].definition, ObjectSchema)
   assert len(schema.definitions[0].definition.properties) == 1
   assert schema.definitions[0].definition.properties[0].name == "url"
-  assert isinstance(schema.definitions[0].definition.properties[0].definition, model.StringSchema)
+  assert isinstance(schema.definitions[0].definition.properties[0].definition, StringSchema)
 
 def test_ref():
   json_src = """{
@@ -147,13 +143,12 @@ def test_ref():
   }
   """
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema, model.ObjectSchema)
+  assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "home"
-  assert isinstance(schema.properties[0].definition, model.Reference)
+  assert isinstance(schema.properties[0].definition, Reference)
 
 def test_anyof():
   json_src = """{
@@ -192,13 +187,12 @@ def test_anyof():
   }
   """
   
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert isinstance(schema, model.ObjectSchema)
+  assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "home"
-  assert isinstance(schema.properties[0].definition, model.AnyOf)
+  assert isinstance(schema.properties[0].definition, AnyOf)
   assert len(schema.properties[0].definition.options) == 2
-  assert isinstance(schema.properties[0].definition.options[0], model.Reference)
-  assert isinstance(schema.properties[0].definition.options[1], model.Reference)
+  assert isinstance(schema.properties[0].definition.options[0], Reference)
+  assert isinstance(schema.properties[0].definition.options[1], Reference)

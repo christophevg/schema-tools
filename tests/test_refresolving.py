@@ -1,4 +1,4 @@
-from schema_tools import json, model
+from schema_tools.schema import loads, StringSchema, ObjectSchema, Reference
 
 def test_simple_local_ref_to_definition():
   json_src = """{
@@ -37,15 +37,14 @@ def test_simple_local_ref_to_definition():
   }
   """
   
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
 
-  assert isinstance(schema.property("home").options[1], model.Reference)
+  assert isinstance(schema.property("home").options[1], Reference)
   resolved = schema.property("home").options[1].resolve()
-  assert isinstance(resolved, model.StringSchema)
+  assert isinstance(resolved, StringSchema)
   assert resolved is schema.definition("id")
 
-def test_external_references(schema):
+def test_external_references(asset):
   json_src = """{
     "type": "object",
     "properties" : {
@@ -57,14 +56,13 @@ def test_external_references(schema):
       }
     }
   }
-  """.replace("%%%%", schema("guid.json"))
+  """.replace("%%%%", asset("guid.json"))
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert( isinstance(schema,                            model.ObjectSchema) )
-  assert( isinstance(schema.property("home"),           model.Reference)    )
-  assert( isinstance(schema.property("home").resolve(), model.StringSchema) )
+  assert( isinstance(schema,                            ObjectSchema) )
+  assert( isinstance(schema.property("home"),           Reference)    )
+  assert( isinstance(schema.property("home").resolve(), StringSchema) )
 
   try:
     schema.property("business").resolve()
@@ -72,7 +70,7 @@ def test_external_references(schema):
   except ValueError:
     pass
 
-def test_external_reference_with_fragment(schema):
+def test_external_reference_with_fragment(asset):
   json_src = """{
     "type": "object",
     "properties" : {
@@ -81,11 +79,10 @@ def test_external_reference_with_fragment(schema):
       }
     }
   }
-  """.replace("%%%%", schema("money.json#/properties/currency"))
+  """.replace("%%%%", asset("money.json#/properties/currency"))
 
-  ast    = json.loads(json_src)
-  schema = model.load(ast)
+  schema = loads(json_src)
   
-  assert( isinstance(schema,                               model.ObjectSchema) )
-  assert( isinstance(schema.property("foreign"),           model.Reference)    )
-  assert( isinstance(schema.property("foreign").resolve(), model.StringSchema) )
+  assert( isinstance(schema,                               ObjectSchema) )
+  assert( isinstance(schema.property("foreign"),           Reference)    )
+  assert( isinstance(schema.property("foreign").resolve(), StringSchema) )
