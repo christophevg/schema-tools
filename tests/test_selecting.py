@@ -163,9 +163,9 @@ def test_external_reference_with_fragment(asset):
 
 def test_tracing(asset):
   schema = load(asset("invoice.json"))
-  trace = schema.trace("lines.price.amount")
-  assert len(trace) == 3
+  trace  = schema.trace("lines.price.amount")
 
-  assert "lines"  in trace[0] and isinstance(trace[0]["lines"].definition,  ArraySchema)
-  assert "price"  in trace[1] and isinstance(trace[1]["price"].definition,  ObjectSchema)
-  assert "amount" in trace[2] and isinstance(trace[2]["amount"].definition, IntegerSchema)
+  assert len(trace) == 3
+  assert trace[0].name == "lines"  and isinstance(trace[0].definition, ArraySchema)
+  assert trace[1].name == "price"  and isinstance(trace[1].definition, ObjectSchema)
+  assert trace[2].name == "amount" and isinstance(trace[2].definition, IntegerSchema)

@@ -31,18 +31,15 @@ class Schema(object):
     except KeyError:
       return None
 
-  def select(self, *path):
-    # print("schema", path)
-    return self._select(*self.expand(*path))
+  def select(self, *path, stack=[]):
+    # print("select", path)
+    return self._select(*self.expand(*path), stack=stack)
 
   def trace(self, *path):
-    path  = self.expand(*path)
-    trace = []
-    steps = []
-    for step in path:
-      steps.append(step)
-      trace.append( { step : self.select(*steps) } )
-    return trace
+    # print("trace", path)
+    stack = []
+    self.select(*path, stack=stack)
+    return stack
 
   def expand(self, *path):
     # ensure all parts in the path are strings
@@ -53,8 +50,8 @@ class Schema(object):
     if len(path) == 1: path = path[0].split(".")
     return path
 
-  def _select(self, *path):
-    # print("schema _select", path)
+  def _select(self, *path, stack=[]):
+    # print(stack, "schema", path)
     return None # default
 
   def __repr__(self):
@@ -104,17 +101,21 @@ class ObjectSchema(Schema):
         return prop.definition if return_definition else prop
     raise KeyError("'{}' is not a known property".format(key))
 
-  def _select(self, prop=None, *remainder):
-    # print("object", prop, remainder)
-    if prop is None: return self
+  def has_property(self, name):
+    return any([ prop.name == name for prop in self.properties ])
+
+  def _select(self, name, *remainder, stack=[]):
+    # print(stack, "object", name, remainder)
+    result = None
     try:
+      result = self.property(name, return_definition=False)
+      stack.append(result)
       if remainder:
-        return self.property(prop).select(*remainder)
-      else:
-        return self.property(prop, return_definition=False)
+        result = result._select(*remainder, stack=stack)
+        if not result: stack.pop() # backtracking
     except KeyError:
-      pass # unknown property
-    return None
+      pass
+    return result
 
   def _more_repr(self):
     return {
@@ -169,12 +170,16 @@ class Definition(Schema):
     else:
       return self._definition
 
+  def _select(self, *path, stack=[]):
+    # print(stack, "definition/property", path)
+    return self.definition._select(*path, stack=stack)
+
 class Property(Definition):
   pass
 
 class ValueSchema(Schema):
-  def _select(self): # no prop nor remainder accepted
-    # print("value")
+  def _select(self, stack=[]): # no prop nor remainder accepted
+    # print(stack, "value")
     return self
 
 class StringSchema(ValueSchema):  pass
@@ -209,9 +214,10 @@ class ArraySchema(Schema):
       out["items"] = self.items
     return out
 
-  def _select(self, *path):
-    # print("array", path)
-    return self.items._select(*path)
+  def _select(self, *path, stack=[]):
+    # TODO in case of (list, bool, None)
+    # print(stack, "array", path)
+    return self.items._select(*path, stack=stack)
 
 class Combination(Schema):
   def __init__(self, options=[], **kwargs):
@@ -232,10 +238,10 @@ class Combination(Schema):
     out[name] = [ o.to_dict() for o in self.options ]
     return out
 
-  def _select(self, *path):
-    # print("combination", path)
+  def _select(self, *path, stack=[]):
+    # print(stack, "combination", path)
     for option in self.options:
-      result = option._select(*path)
+      result = option._select(*path, stack=stack)
       if result: return result
     return None
 
@@ -308,9 +314,9 @@ class Reference(Schema):
       except Exception as e:
         raise ValueError("unable to parse '{}', due to '{}'".format(url, str(e)))
 
-  def _select(self, *path):
-    # print("ref", path)
-    return self.resolve()._select(*path)
+  def _select(self, *path, stack=[]):
+    # print(self._stack, "ref", path)
+    return self.resolve()._select(*path, stack=stack)
 
 class Enum(Schema):
   def __init__(self, enum=[], **kwargs):
