@@ -169,3 +169,11 @@ def test_tracing(asset):
   assert trace[0].name == "lines"  and isinstance(trace[0].definition, ArraySchema)
   assert trace[1].name == "price"  and isinstance(trace[1].definition, ObjectSchema)
   assert trace[2].name == "amount" and isinstance(trace[2].definition, IntegerSchema)
+
+def test_none_selectors(asset):
+  schema = load(asset("invoice.json"))
+  assert schema.select(None) is None
+  assert schema.trace(None) == []
+  trace = schema.trace(None, "lines")
+  assert len(trace) == 1
+  assert trace[0].name == "lines"  and isinstance(trace[0].definition, ArraySchema)

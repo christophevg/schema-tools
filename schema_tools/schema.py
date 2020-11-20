@@ -32,23 +32,25 @@ class Schema(object):
       return None
 
   def select(self, *path, stack=[]):
-    # print("select", path)
-    return self._select(*self.expand(*path), stack=stack)
+    path = list(path)
+    print("select", path)
+    # pop leading Nones
+    while path and path[0] is None:
+      path.pop(0)
+    if not path: return None
+    # ensure all parts in the path are strings
+    for step in path:
+      if not isinstance(step, str):
+        raise ValueError("only string paths are selectable")
+    # single path can be dotted string
+    if len(path) == 1: path = path[0].split(".")
+    return self._select(*path, stack=stack)
 
   def trace(self, *path):
     # print("trace", path)
     stack = []
     self.select(*path, stack=stack)
     return stack
-
-  def expand(self, *path):
-    # ensure all parts in the path are strings
-    for step in path:
-      if not isinstance(step, str):
-        raise TypeError("only string paths are selectable")
-    # single path can be dotted string
-    if len(path) == 1: path = path[0].split(".")
-    return path
 
   def _select(self, *path, stack=[]):
     # print(stack, "schema", path)
