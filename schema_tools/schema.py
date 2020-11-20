@@ -33,7 +33,7 @@ class Schema(object):
 
   def select(self, *path, stack=[]):
     path = list(path)
-    print("select", path)
+    # print("select", path)
     # pop leading Nones
     while path and path[0] is None:
       path.pop(0)
