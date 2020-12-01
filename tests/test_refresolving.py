@@ -52,7 +52,7 @@ def test_external_references(asset):
         "$ref" : "file:%%%%"
       },
       "business" : {
-        "$ref" : "https://example.com/schemas/unknown.json"
+        "$ref" : "https://localhost/schemas/unknown.json"
       }
     }
   }
