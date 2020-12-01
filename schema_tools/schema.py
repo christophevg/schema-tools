@@ -79,6 +79,9 @@ class Schema(object):
   def items(self):
     return self.args.items()
 
+  def dependencies(self):
+    return []
+
 class ObjectSchema(Schema):
   def __init__(self, properties=[], definitions=[], **kwargs):
     super().__init__(**kwargs)
@@ -137,6 +140,13 @@ class ObjectSchema(Schema):
       }
     return out
 
+  def dependencies(self):
+    return list({
+      dependency \
+      for prop in self.properties \
+      for dependency in prop.dependencies()
+    })
+
 class Definition(Schema):
   def __init__(self, name, definition):
     self.name              = name
@@ -175,6 +185,9 @@ class Definition(Schema):
   def _select(self, *path, stack=[]):
     # print(stack, "definition/property", path)
     return self.definition._select(*path, stack=stack)
+
+  def dependencies(self):
+    return self._definition.dependencies()
 
 class Property(Definition):
   pass
@@ -221,6 +234,16 @@ class ArraySchema(Schema):
     # print(stack, "array", path)
     return self.items._select(*path, stack=stack)
 
+  def dependencies(self):
+    if isinstance(self.items, Schema):
+      return self.items.dependencies()
+    else:
+      return list({
+        dependency \
+        for item in self.items \
+        for dependency in item.dependencies()
+      })
+
 class Combination(Schema):
   def __init__(self, options=[], **kwargs):
     super().__init__(**kwargs)
@@ -246,6 +269,13 @@ class Combination(Schema):
       result = option._select(*path, stack=stack)
       if result: return result
     return None
+
+  def dependencies(self):
+    return list({
+      dependency \
+      for option in self.options \
+      for dependency in option.dependencies()
+    })
 
 class AllOf(Combination): pass
 class AnyOf(Combination): pass
@@ -319,6 +349,18 @@ class Reference(Schema):
   def _select(self, *path, stack=[]):
     # print(self._stack, "ref", path)
     return self.resolve()._select(*path, stack=stack)
+
+  def dependencies(self):
+    return  list(set( self.resolve().dependencies() + [ self ] ))
+
+  def __hash__(self):
+    return hash(self.ref)
+
+  def __eq__(self, other):
+    if isinstance(other, self.__class__):
+      return self.ref == other.ref
+    else:
+      return False
 
 class Enum(Schema):
   def __init__(self, enum=[], **kwargs):

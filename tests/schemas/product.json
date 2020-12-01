@@ -4,8 +4,11 @@
   "type": "object",
   "version": 1,
   "properties": {
+    "id" : {
+      "$ref" : "file:tests/schemas/guid.json"
+    },
     "name": {
-      "type": "integer"
+      "type": "string"
     },
     "cost": {
       "$ref" : "file:tests/schemas/money.json"

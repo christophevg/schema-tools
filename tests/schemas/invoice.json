@@ -9,8 +9,8 @@
       "items": {
         "type" : "object",
         "properties" : {
-          "label" : {
-            "type" : "string"
+          "product" : {
+            "$ref" : "file:tests/schemas/product.json"
           },
           "quantity" : {
             "type" : "integer"
