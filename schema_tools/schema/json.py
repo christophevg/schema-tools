@@ -7,7 +7,9 @@ from pathlib import Path
 from schema_tools import json, yaml
 from schema_tools.schema import Schema, Mapper, loads
 
-class ObjectSchema(Schema):
+class IdentifiedSchema(Schema): pass
+
+class ObjectSchema(IdentifiedSchema):
   def __init__(self, properties=[], definitions=[], allof=[], **kwargs):
     super().__init__(**kwargs)
     if properties is None: properties = []
@@ -86,7 +88,7 @@ class ObjectSchema(Schema):
       for dependency in prop.dependencies(resolve=resolve)
     })
 
-class Definition(Schema):
+class Definition(IdentifiedSchema):
   def __init__(self, name, definition):
     self.name              = name
     self._definition       = definition
@@ -128,17 +130,17 @@ class Definition(Schema):
   def dependencies(self, resolve=False):
     return self._definition.dependencies(resolve=resolve)
 
-class Property(Definition):       pass
+class Property(Definition):          pass
 
-class ValueSchema(Schema):        pass
+class ValueSchema(IdentifiedSchema): pass
 
-class StringSchema(ValueSchema):  pass
-class IntegerSchema(ValueSchema): pass
-class NullSchema(ValueSchema):    pass
-class NumberSchema(ValueSchema):  pass
-class BooleanSchema(ValueSchema): pass
+class StringSchema(ValueSchema):     pass
+class IntegerSchema(ValueSchema):    pass
+class NullSchema(ValueSchema):       pass
+class NumberSchema(ValueSchema):     pass
+class BooleanSchema(ValueSchema):    pass
 
-class ArraySchema(Schema):
+class ArraySchema(IdentifiedSchema):
   def __init__(self, items=None, **kwargs):
     super().__init__(**kwargs)
     self.items = items
@@ -179,7 +181,7 @@ class ArraySchema(Schema):
         for dependency in item.dependencies(resolve=resolve)
       })
 
-class Combination(Schema):
+class Combination(IdentifiedSchema):
   def __init__(self, options=[], **kwargs):
     super().__init__(**kwargs)
     self.options = options
@@ -222,7 +224,7 @@ class AllOf(Combination): pass
 class AnyOf(Combination): pass
 class OneOf(Combination): pass
 
-class Reference(Schema):
+class Reference(IdentifiedSchema):
   def __init__(self, ref=None, **kwargs):
     super().__init__(**kwargs)
     self.ref = ref
@@ -309,7 +311,7 @@ class Reference(Schema):
     else:
       return False
 
-class Enum(Schema):
+class Enum(IdentifiedSchema):
   def __init__(self, enum=[], **kwargs):
     super().__init__(**kwargs)
     self.values = enum
@@ -327,7 +329,10 @@ class SchemaMapper(Mapper):
   
   def map_object(self, properties):
     if self.has( properties, "type", "object" ) or \
-       self.has( properties, "type", list, containing="object"):
+       self.has( properties, "type", list, containing="object") or \
+       ( self.has(properties, "properties") and \
+         not isinstance(properties["properties"], IdentifiedSchema) ):
+      # if not "type" in properties: properties["type"] = "object"
       # properties and definitions bubble up as Generic Schemas
       if self.has(properties, "properties"):
         properties["properties"] = [
