@@ -48,52 +48,22 @@ class Components(Schema):
 class SwaggerMapper(Mapper):
   
   def map_components(self, properties):
-    if self.has( properties, "schemas" ) and
+    if self.has( properties, "components" ) and \
+       self.has( properties["components"], "schemas" ):
+      schemas = [
+        Definition(name, definition) \
+        for name, definition in properties["components"]["schemas"].items()
+      ]
+      return 
+
       schemas = properties["schemas"]
       properties["schemas"] = [
-          Property(name, definition) \
-          for name, definition in properties["properties"].items()
-        ]
+        Property(name, definition) \
+        for name, definition in properties["properties"].items()
+      ]
       if self.has(properties, "definitions"):
         properties["definitions"] = [
           Definition(name, definition) \
           for name, definition in properties["definitions"].items()
         ]
       return ObjectSchema(**properties)
-
-  def map_value(self, properties):
-    value_mapping = {
-      "boolean": BooleanSchema,
-      "integer": IntegerSchema,
-      "null":    NullSchema,
-      "number":  NumberSchema,
-      "string":  StringSchema,
-      "array":   ArraySchema
-    }
-    if self.has(properties, "type", value_mapping):
-      return value_mapping[properties["type"]](**properties)
-    
-  def map_all_of(self, properties):
-    if self.has(properties, "allOf", list):
-      properties["options"] = properties.pop("allOf")
-      return AllOf(**properties)
-
-  def map_any_of(self, properties):
-    if self.has(properties, "anyOf", list):
-      properties["options"] = properties.pop("anyOf")
-      return AnyOf(**properties)
-
-  def map_one_of(self, properties):
-    if self.has(properties, "oneOf", list):
-      properties["options"] = properties.pop("oneOf")
-      return OneOf(**properties)
-
-  def map_reference(self, properties):
-    if self.has(properties, "$ref", str):
-      properties["ref"] = properties.pop("$ref")
-      return Reference(**properties)
-
-  def map_enum(self, properties):
-    if self.has(properties, "enum", list):
-      return Enum(**properties)
-

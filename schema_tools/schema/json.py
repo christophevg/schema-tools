@@ -259,6 +259,9 @@ class Reference(Schema):
       elif fragment.startswith("/properties/"):
         name = fragment.replace("/properties/", "")
         return doc.property(name)
+      elif fragment.startswith("/components/schemas/"):
+        name = fragment.replace("/components/schemas/", "")
+        return doc.definition(name)        
       else:
         raise NotImplementedError
 
@@ -335,6 +338,13 @@ class SchemaMapper(Mapper):
         properties["definitions"] = [
           Definition(name, definition) \
           for name, definition in properties["definitions"].items()
+        ]
+      if self.has(properties, "components") and properties["components"].schemas:
+        components = properties.pop("components")
+        if not "definitions" in properties: properties["definitions"] = []
+        properties["definitions"] += [
+          Definition(name, definition) \
+          for name, definition in components.schemas.items()
         ]
       return ObjectSchema(**properties)
 

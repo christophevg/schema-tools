@@ -1,22 +1,32 @@
 from schema_tools        import yaml
 from schema_tools.schema import loads
 
+from schema_tools.schema.json import StringSchema, ObjectSchema, Property
 
 def test_swagger_component_definitions():
   src = """
 type: object
 properties:
   something:
-    $ref: "#/components/schemas/something"
+    $ref: "#/components/schemas/sometype"
+  someotherthing:
+    $ref: "#/components/schemas/someothertype"
 components:
   schemas:
     sometype:
       type: string
+    someothertype:
+      type: object
+      properties:
+        foo:
+          type: string
 """
 
   schema = loads(src, parser=yaml)
-  print(schema)
-  # assert False
+
+  assert isinstance(schema.property("something"), StringSchema)
+  assert isinstance(schema.property("someotherthing"), ObjectSchema)
+  assert isinstance(schema.select("someotherthing.foo").definition, StringSchema)
 
 def test_swagger_structure():
   yaml_src = """
