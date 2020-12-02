@@ -8,7 +8,7 @@ from schema_tools import json, yaml
 from schema_tools.schema import Schema, Mapper, loads
 
 class ObjectSchema(Schema):
-  def __init__(self, properties=[], definitions=[], **kwargs):
+  def __init__(self, properties=[], definitions=[], allof=[], **kwargs):
     super().__init__(**kwargs)
     if properties is None: properties = []
     self.properties = properties
@@ -18,6 +18,10 @@ class ObjectSchema(Schema):
     self.definitions = definitions
     for definition in self.definitions:
       definition.parent = self
+    if allof is None: allof = []
+    self.allof = allof
+    for allof in self.allof:
+      allof.parent = self
 
   def definition(self, key, return_definition=True):
     for definition in self.definitions:
@@ -26,13 +30,19 @@ class ObjectSchema(Schema):
     raise KeyError("'{}' is not a known definition".format(key))
 
   def property(self, key, return_definition=True):
+    # local properties
     for prop in self.properties:
       if prop.name == key:
         return prop.definition if return_definition else prop
+    # collected/all-of properties
+    for candidate in self.allof:
+      if isinstance(candidate, Reference):
+        candidate = candidate.resolve()
+      try:
+        return candidate.property(key, return_definition=return_definition)
+      except:
+        pass
     raise KeyError("'{}' is not a known property".format(key))
-
-  def has_property(self, name):
-    return any([ prop.name == name for prop in self.properties ])
 
   def _select(self, name, *remainder, stack=[]):
     # print(stack, "object", name, remainder)
@@ -48,8 +58,9 @@ class ObjectSchema(Schema):
 
   def _more_repr(self):
     return {
-      "properties"  : len(self.properties),
-      "definitions" : len(self.definitions)
+      "properties"  : [ prop.name for prop in self.properties ],
+      "definitions" : [ definition.name for definition in self.definitions ],
+      "allof"       : [ repr(candidate) for candidate in self.allof ]
     }
 
   def to_dict(self):
@@ -62,12 +73,16 @@ class ObjectSchema(Schema):
       out["definitions"] = {
         d.name : d.to_dict() for d in self.definitions 
       }
+    if self.allof:
+      out["allof"] = [
+         a.to_dict() for a in self.allof
+      ]
     return out
 
   def dependencies(self, resolve=False):
     return list({
       dependency \
-      for prop in self.properties \
+      for prop in self.properties + self.allof \
       for dependency in prop.dependencies(resolve=resolve)
     })
 
