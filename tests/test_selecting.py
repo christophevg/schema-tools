@@ -173,10 +173,11 @@ def test_tracing(asset):
 def test_none_selectors(asset):
   schema = load(asset("invoice.json"))
   assert schema.select(None) is None
+  assert schema.select() is None
   assert schema.trace(None) == []
   trace = schema.trace(None, "lines")
-  assert len(trace) == 1
-  assert trace[0].name == "lines"  and isinstance(trace[0].definition, ArraySchema)
+  assert len(trace) == 0
+
 def test_none_string_selectors(asset):
   schema = load(asset("invoice.json"))
   try:
