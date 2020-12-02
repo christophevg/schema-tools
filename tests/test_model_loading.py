@@ -1,4 +1,6 @@
-from schema_tools.schema import loads, StringSchema, ObjectSchema, Reference, AnyOf
+from schema_tools             import yaml
+from schema_tools.schema      import loads
+from schema_tools.schema.json import StringSchema, ObjectSchema, Reference, AnyOf
 
 def test_string_schema():
   json_src = """{
@@ -197,3 +199,55 @@ def test_anyof():
   assert len(schema.properties[0].definition.options) == 2
   assert isinstance(schema.properties[0].definition.options[0], Reference)
   assert isinstance(schema.properties[0].definition.options[1], Reference)
+
+
+def test_swagger_style_definitions():
+  yaml_src = """
+components:
+  schemas:
+    something:
+      type: object
+      properties:
+      allOf:
+        - $ref: '#/components/schemas/somethingElse'
+      discriminator:
+        propertyName: 'type'
+"""
+
+  schema = loads(yaml_src, parser=yaml)
+  print(schema.to_dict())
+  # assert False
+
+def test_swagger_structure():
+  yaml_src = """
+openapi: 3.0.0
+info:
+  description: "deposits endpoint"
+  version: "1.0.0"
+  title: "vouchers"
+paths:
+  /make/deposit:
+    post:
+      summary: "make a deposit"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: file:tests/schemas/money.json
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                type: boolean
+        '400':
+          description: failure
+          content:
+            application/json:
+              schema:
+                type: string
+"""
+  schema = loads(yaml_src, yaml)
+  print(schema.to_dict())

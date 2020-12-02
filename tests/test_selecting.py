@@ -1,6 +1,6 @@
-from schema_tools.schema import loads, load
-from schema_tools.schema import StringSchema, ObjectSchema, ArraySchema, IntegerSchema
-from schema_tools.schema import Definition, Property
+from schema_tools.schema      import loads, load
+from schema_tools.schema.json import StringSchema, ObjectSchema, ArraySchema, IntegerSchema
+from schema_tools.schema.json import Definition, Property
 
 def test_simple_selections():
   json_src = """{

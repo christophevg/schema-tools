@@ -1,96 +1,11 @@
 import requests
 from requests_file import FileAdapter
 
-import collections
-
-UnknownProperty = collections.namedtuple("UnknownProperty", "name definition")
-
 from urllib.parse import urldefrag, urlparse
 from pathlib import Path
 
-from schema_tools.utils import ASTVisitor
-from schema_tools       import json, yaml
-
-def build(nodes):
-  return NodesMapper().visit(nodes)
-
-def load(path, parser=json):
-  return build(parser.load(path))
-
-def loads(src, parser=json):
-  return build(parser.loads(src))
-
-
-class Schema(object):
-  args = {}
-
-  def __init__(self, location=None, **kwargs):
-    self.parent   = None
-    self.location = location
-    self.args     = kwargs   # catchall properties
-
-  def __getattr__(self, key):
-    try:
-      return self.args[key]
-    except KeyError:
-      return None
-
-  def select(self, *path, stack=[]):
-    path = self._clean(path)
-    if not path: return None
-    # print("select", path)
-    return self._select(*path, stack=stack)
-
-  def trace(self, *path):
-    path = self._clean(path)
-    if not path: return []
-    # print("trace", path)
-    stack = []
-    self.select(*path, stack=stack)
-    # add UnknownProperties for not returned items in stack
-    for missing in path[len(stack):]:
-      stack.append(UnknownProperty(missing, None))
-    return stack
-
-  def _clean(self, path):
-    if not path or path[0] is None: return None
-    # ensure all parts in the path are strings
-    for step in path:
-      if not isinstance(step, str):
-        raise ValueError("only string paths are selectable")
-    # single path can be dotted string
-    if len(path) == 1: path = path[0].split(".")
-    return path
-
-  def _select(self, *path, stack=[]):
-    # print(stack, "schema", path)
-    return None # default
-
-  def __repr__(self):
-    props = { k: v for k, v in self.args.items() }  # TODO not "if v" ?
-    props.update(self._more_repr())
-    props["location"] = self.location
-    return "{}({})".format(
-      self.__class__.__name__,
-      ", ".join( [ "{}={}".format(k, v) for k, v in props.items() ] )
-    )
-
-  def _more_repr(self):
-    return {}
-
-  def to_dict(self):
-    items = {}
-    for k, v in self.args.items():
-      if isinstance(v, Schema):
-        v = v.to_dict()
-      items[k] = v
-    return items
-
-  def items(self):
-    return self.args.items()
-
-  def dependencies(self, resolve=False):
-    return []
+from schema_tools import json, yaml
+from schema_tools.schema import Schema, Mapper, loads
 
 class ObjectSchema(Schema):
   def __init__(self, properties=[], definitions=[], **kwargs):
@@ -390,55 +305,57 @@ class Enum(Schema):
     return { "enum" : self.values }
 
 
-value_mapping = {
-  "boolean": BooleanSchema,
-  "integer": IntegerSchema,
-  "null":    NullSchema,
-  "number":  NumberSchema,
-  "string":  StringSchema,
-  "array":   ArraySchema
-}
-
-def defines_object(properties):
-  return "type" in properties and \
-       ( properties["type"] == "object" or \
-         ( isinstance(properties["type"], list) and "object" in properties["type"] ) )
-
-class NodesMapper(ASTVisitor):
-  def visit_value(self, value_node):
-    return value_node()
-
-  def visit_object(self, object_node):
-    properties = super().visit_object(object_node)
-    properties["location"] = self.location(object_node)
-    if defines_object(properties):
+class SchemaMapper(Mapper):
+  
+  def map_object(self, properties):
+    if self.has( properties, "type", "object" ) or \
+       self.has( properties, "type", list, containing="object"):
       # properties and definitions bubble up as Generic Schemas
-      if "properties" in properties and properties["properties"]:
+      if self.has(properties, "properties"):
         properties["properties"] = [
           Property(name, definition) \
           for name, definition in properties["properties"].items()
         ]
-      if "definitions" in properties and properties["definitions"]:
+      if self.has(properties, "definitions"):
         properties["definitions"] = [
           Definition(name, definition) \
           for name, definition in properties["definitions"].items()
         ]
       return ObjectSchema(**properties)
-    elif "type" in properties and properties["type"] in value_mapping:
+
+  def map_value(self, properties):
+    value_mapping = {
+      "boolean": BooleanSchema,
+      "integer": IntegerSchema,
+      "null":    NullSchema,
+      "number":  NumberSchema,
+      "string":  StringSchema,
+      "array":   ArraySchema
+    }
+    if self.has(properties, "type", value_mapping):
       return value_mapping[properties["type"]](**properties)
-    elif "allOf" in properties and isinstance(properties["allOf"], list):
+    
+  def map_all_of(self, properties):
+    if self.has(properties, "allOf", list):
       properties["options"] = properties.pop("allOf")
       return AllOf(**properties)
-    elif "anyOf" in properties and isinstance(properties["anyOf"], list):
+
+  def map_any_of(self, properties):
+    if self.has(properties, "anyOf", list):
       properties["options"] = properties.pop("anyOf")
       return AnyOf(**properties)
-    elif "oneOf" in properties and isinstance(properties["oneOf"], list):
+
+  def map_one_of(self, properties):
+    if self.has(properties, "oneOf", list):
       properties["options"] = properties.pop("oneOf")
       return OneOf(**properties)
-    elif "$ref" in  properties and isinstance(properties["$ref"], str):
+
+  def map_reference(self, properties):
+    if self.has(properties, "$ref", str):
       properties["ref"] = properties.pop("$ref")
       return Reference(**properties)
-    elif "enum" in properties and isinstance(properties["enum"], list):
+
+  def map_enum(self, properties):
+    if self.has(properties, "enum", list):
       return Enum(**properties)
-    else:
-      return Schema(**properties)
+

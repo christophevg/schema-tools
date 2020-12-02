@@ -1,5 +1,6 @@
-from schema_tools        import yaml
-from schema_tools.schema import build, IntegerSchema, StringSchema
+from schema_tools             import yaml
+from schema_tools.schema      import build
+from schema_tools.schema.json import IntegerSchema, StringSchema
 
 def test_allow_for_empty_properties():
   # empty properties shouldn't fail building object schema from AST

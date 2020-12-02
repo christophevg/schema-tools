@@ -1,0 +1,126 @@
+import collections
+
+import inspect
+
+UnknownProperty = collections.namedtuple("UnknownProperty", "name definition")
+
+from schema_tools        import json
+from schema_tools.utils  import ASTVisitor
+
+def load(path, parser=json):
+  return build(parser.load(path))
+
+def loads(src, parser=json):
+  return build(parser.loads(src))
+
+def build(nodes):
+  from schema_tools.schema.json import SchemaMapper
+  return NodesMapper(SchemaMapper()).visit(nodes)
+
+class NodesMapper(ASTVisitor):
+  def __init__(self, *mappers):
+    super().__init__()
+    self.mappers = [
+      func \
+      for mapper in mappers \
+      for func in inspect.getmembers(mapper, predicate=callable) \
+      if func[0].startswith("map_")
+    ]
+
+  def visit_value(self, value_node):
+    return value_node()
+
+  def visit_object(self, object_node):
+    properties = super().visit_object(object_node)
+    properties["location"] = self.location(object_node)
+
+    for name, mapper in self.mappers:
+      result = mapper(properties)
+      if result: return result
+
+    return Schema(**properties)
+
+class Mapper(object):
+  def has(self, properties, name, of_type=None, containing=None):
+    if of_type:
+      if isinstance(of_type, str):
+        return name in properties and properties[name] == of_type      
+      elif isinstance(of_type, dict):
+        return name in properties and properties[name] in of_type
+      else:
+        if name in properties and isinstance(properties[name], of_type):
+          if not containing or containing in properties[name]:
+            return True
+        return False
+    return name in properties and properties[name]
+
+class Schema(object):
+  args = {}
+
+  def __init__(self, location=None, **kwargs):
+    self.parent   = None
+    self.location = location
+    self.args     = kwargs   # catchall properties
+
+  def __getattr__(self, key):
+    try:
+      return self.args[key]
+    except KeyError:
+      return None
+
+  def select(self, *path, stack=[]):
+    path = self._clean(path)
+    if not path: return None
+    # print("select", path)
+    return self._select(*path, stack=stack)
+
+  def trace(self, *path):
+    path = self._clean(path)
+    if not path: return []
+    # print("trace", path)
+    stack = []
+    self.select(*path, stack=stack)
+    # add UnknownProperties for not returned items in stack
+    for missing in path[len(stack):]:
+      stack.append(UnknownProperty(missing, None))
+    return stack
+
+  def _clean(self, path):
+    if not path or path[0] is None: return None
+    # ensure all parts in the path are strings
+    for step in path:
+      if not isinstance(step, str):
+        raise ValueError("only string paths are selectable")
+    # single path can be dotted string
+    if len(path) == 1: path = path[0].split(".")
+    return path
+
+  def _select(self, *path, stack=[]):
+    # print(stack, "schema", path)
+    return None # default
+
+  def __repr__(self):
+    props = { k: v for k, v in self.args.items() }  # TODO not "if v" ?
+    props.update(self._more_repr())
+    props["location"] = self.location
+    return "{}({})".format(
+      self.__class__.__name__,
+      ", ".join( [ "{}={}".format(k, v) for k, v in props.items() ] )
+    )
+
+  def _more_repr(self):
+    return {}
+
+  def to_dict(self):
+    items = {}
+    for k, v in self.args.items():
+      if isinstance(v, Schema):
+        v = v.to_dict()
+      items[k] = v
+    return items
+
+  def items(self):
+    return self.args.items()
+
+  def dependencies(self, resolve=False):
+    return []

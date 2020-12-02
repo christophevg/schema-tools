@@ -1,5 +1,6 @@
-from schema_tools.schema  import load, IntegerSchema, StringSchema
-from schema_tools.mapping import Mapping
+from schema_tools.schema      import load
+from schema_tools.schema.json import IntegerSchema, StringSchema
+from schema_tools.mapping     import Mapping
 
 def test_simple_string_mapping(asset):
   source = load(asset("product.json")).select("cost.amount").definition

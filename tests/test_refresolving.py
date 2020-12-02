@@ -1,4 +1,5 @@
-from schema_tools.schema import loads, StringSchema, ObjectSchema, Reference
+from schema_tools.schema      import loads
+from schema_tools.schema.json import StringSchema, ObjectSchema, Reference
 
 def test_simple_local_ref_to_definition():
   json_src = """{

@@ -1,4 +1,4 @@
-from schema_tools.schema import ValueSchema
+from schema_tools.schema.json import ValueSchema
 
 class Mapping(object):
   def __init__(self, source, target):
