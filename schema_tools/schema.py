@@ -1,6 +1,10 @@
 import requests
 from requests_file import FileAdapter
 
+import collections
+
+UnknownProperty = collections.namedtuple("UnknownProperty", "name definition")
+
 from urllib.parse import urldefrag, urlparse
 from pathlib import Path
 
@@ -43,6 +47,9 @@ class Schema(object):
     # print("trace", path)
     stack = []
     self.select(*path, stack=stack)
+    # add UnknownProperties for not returned items in stack
+    for missing in path[len(stack):]:
+      stack.append(UnknownProperty(missing, None))
     return stack
 
   def _clean(self, path):
@@ -120,7 +127,6 @@ class ObjectSchema(Schema):
       stack.append(result)
       if remainder:
         result = result._select(*remainder, stack=stack)
-        if not result: stack.pop() # backtracking
     except KeyError:
       pass
     return result
@@ -192,13 +198,9 @@ class Definition(Schema):
   def dependencies(self, resolve=False):
     return self._definition.dependencies(resolve=resolve)
 
-class Property(Definition):
-  pass
+class Property(Definition):       pass
 
-class ValueSchema(Schema):
-  def _select(self, stack=[]): # no prop nor remainder accepted
-    # print(stack, "value")
-    return self
+class ValueSchema(Schema):        pass
 
 class StringSchema(ValueSchema):  pass
 class IntegerSchema(ValueSchema): pass
@@ -268,10 +270,16 @@ class Combination(Schema):
 
   def _select(self, *path, stack=[]):
     # print(stack, "combination", path)
+    best_stack = []
+    result     = None
     for option in self.options:
-      result = option._select(*path, stack=stack)
-      if result: return result
-    return None
+      local_stack = []
+      result = option._select(*path, stack=local_stack)
+      if len(local_stack) > len(best_stack):
+        best_stack = local_stack
+      if result: break
+    stack.extend(local_stack)
+    return result
 
   def dependencies(self, resolve=False):
     return list({
