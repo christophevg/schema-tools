@@ -13,7 +13,7 @@ class Mapping(object):
   @property
   def errors(self):
     if not self.is_valid:
-      return "\n".join([str(self)] + self.validation)
+      return self.validation
     return None
   
   def __str__(self):
