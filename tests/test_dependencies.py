@@ -10,4 +10,5 @@ def test_dependency_discovery_while_loading(asset):
   #   money
   # ----------
   # product, guid, money
-  assert len(schema.dependencies()) == 3
+  assert len(schema.dependencies()) == 2
+  assert len(schema.dependencies(resolve=True)) == 3

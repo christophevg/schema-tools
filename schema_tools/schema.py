@@ -79,7 +79,7 @@ class Schema(object):
   def items(self):
     return self.args.items()
 
-  def dependencies(self):
+  def dependencies(self, resolve=False):
     return []
 
 class ObjectSchema(Schema):
@@ -140,11 +140,11 @@ class ObjectSchema(Schema):
       }
     return out
 
-  def dependencies(self):
+  def dependencies(self, resolve=False):
     return list({
       dependency \
       for prop in self.properties \
-      for dependency in prop.dependencies()
+      for dependency in prop.dependencies(resolve=resolve)
     })
 
 class Definition(Schema):
@@ -186,8 +186,8 @@ class Definition(Schema):
     # print(stack, "definition/property", path)
     return self.definition._select(*path, stack=stack)
 
-  def dependencies(self):
-    return self._definition.dependencies()
+  def dependencies(self, resolve=False):
+    return self._definition.dependencies(resolve=resolve)
 
 class Property(Definition):
   pass
@@ -234,14 +234,14 @@ class ArraySchema(Schema):
     # print(stack, "array", path)
     return self.items._select(*path, stack=stack)
 
-  def dependencies(self):
+  def dependencies(self, resolve=False):
     if isinstance(self.items, Schema):
-      return self.items.dependencies()
+      return self.items.dependencies(resolve=resolve)
     else:
       return list({
         dependency \
         for item in self.items \
-        for dependency in item.dependencies()
+        for dependency in item.dependencies(resolve=resolve)
       })
 
 class Combination(Schema):
@@ -270,11 +270,11 @@ class Combination(Schema):
       if result: return result
     return None
 
-  def dependencies(self):
+  def dependencies(self, resolve=False):
     return list({
       dependency \
       for option in self.options \
-      for dependency in option.dependencies()
+      for dependency in option.dependencies(resolve=resolve)
     })
 
 class AllOf(Combination): pass
@@ -350,8 +350,11 @@ class Reference(Schema):
     # print(self._stack, "ref", path)
     return self.resolve()._select(*path, stack=stack)
 
-  def dependencies(self):
-    return  list(set( self.resolve().dependencies() + [ self ] ))
+  def dependencies(self, resolve=False):
+    if resolve:
+      return  list(set( self.resolve().dependencies(resolve=resolve) + [ self ] ))
+    else:
+      return [ self ]
 
   def __hash__(self):
     return hash(self.ref)
