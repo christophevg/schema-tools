@@ -1,5 +1,5 @@
-from schema_tools             import yaml
-from schema_tools.schema      import loads
+from schema_tools             import json, yaml
+from schema_tools.schema      import loads, load
 from schema_tools.schema.json import StringSchema, IntegerSchema
 from schema_tools.schema.json import ObjectSchema, Reference, AnyOf, Property
 
@@ -221,8 +221,38 @@ definitions:
         type: integer        
 """
   schema = loads(src, parser=yaml)
-  print(schema)
   assert isinstance(schema.property("x"), StringSchema)
   assert isinstance(schema.property("y"), IntegerSchema)
   assert isinstance(schema.select("x"), Property)
   assert isinstance(schema.select("x").definition, StringSchema)
+
+def test_combination_with_schema_dumping():
+  src="""
+{
+  "type": "object",
+  "properties": {
+    "x" : {
+      "type" : "string"
+    },
+    "y" : {
+      "type" : "string"
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "x"
+      ]
+    },
+    {
+      "required": [
+        "y"
+      ]
+    }
+  ]
+}
+"""
+  schema = loads(src)
+  d = schema.to_dict()
+  s = json.dumps(d)
+  

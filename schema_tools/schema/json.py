@@ -5,9 +5,7 @@ from urllib.parse import urldefrag, urlparse
 from pathlib import Path
 
 from schema_tools import json, yaml
-from schema_tools.schema import Schema, Mapper, loads
-
-class IdentifiedSchema(Schema): pass
+from schema_tools.schema import Schema, Mapper, loads, IdentifiedSchema
 
 class ObjectSchema(IdentifiedSchema):
   def __init__(self, properties=[], definitions=[], allof=[], **kwargs):

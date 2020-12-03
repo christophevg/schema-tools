@@ -18,8 +18,8 @@ def test_round_trip_spec(asset):
   # load, parse and generate
   schema = load(original_file).to_dict()
 
-  original_dump = json.dumps(original)
-  gen_dump      = json.dumps(schema)
+  original_dump = json.dumps(original, indent=2, sort_keys=True)
+  gen_dump      = json.dumps(schema, indent=2, sort_keys=True)
   
   print(diff(original_dump, gen_dump))
   assert original == schema

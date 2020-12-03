@@ -61,6 +61,9 @@ class Schema(object):
     self.parent   = None
     self.location = location
     self.args     = kwargs   # catchall properties
+    # drop examples
+    if "examples" in kwargs and not isinstance(kwargs["examples"], IdentifiedSchema):
+      kwargs.pop("examples")
 
   def __getattr__(self, key):
     try:
@@ -116,6 +119,16 @@ class Schema(object):
     for k, v in self.args.items():
       if isinstance(v, Schema):
         v = v.to_dict()
+      elif isinstance(v, list):
+        vv = []
+        for i in v:
+          vv.append(i.to_dict() if isinstance(i, Schema) else i)
+        v = vv
+      elif v is None or isinstance(v, (str, int, float)):
+        pass
+      else:
+        print(v.__class__.__name__, v)
+        raise NotImplementedError
       items[k] = v
     return items
 
@@ -124,3 +137,5 @@ class Schema(object):
 
   def dependencies(self, resolve=False):
     return []
+
+class IdentifiedSchema(Schema): pass
