@@ -91,3 +91,28 @@ def test_external_reference_with_fragment(asset):
   assert foreign.is_ref()
   assert isinstance(foreign._definition, Reference)
   assert isinstance(schema.property("foreign"), StringSchema)
+
+def test_avoiding_recursing():
+  src = """
+{
+  "type" : "object",
+  "properties" : {
+    "person" : {
+      "$ref" : "#/definitions/human"
+    }
+  },
+  "definitions" : {
+    "human" : {
+      "type" : "object",
+      "properties" : {
+        "parent" : {
+          "$ref" : "#/definitions/human"
+        }
+      }
+    }
+  }
+}
+"""
+  schema = loads(src)
+  dependencies = schema.dependencies()
+  assert True

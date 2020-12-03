@@ -56,5 +56,4 @@ def test_dependencies_within_references(asset):
 """.replace("%%%%", asset("money.json"))
 
   schema = loads(src)
-  print(schema)
   assert len(schema.dependencies()) == 1

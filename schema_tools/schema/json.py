@@ -79,11 +79,11 @@ class ObjectSchema(IdentifiedSchema):
       ]
     return out
 
-  def dependencies(self, external=False):
+  def dependencies(self, external=False, visited=None):
     return list({
       dependency \
       for prop in self.properties + self.allof \
-      for dependency in prop.dependencies(external=external)
+      for dependency in prop.dependencies(external=external, visited=visited)
     })
 
 class Definition(IdentifiedSchema):
@@ -125,8 +125,8 @@ class Definition(IdentifiedSchema):
     # print(stack, "definition/property", path)
     return self.definition._select(*path, stack=stack)
 
-  def dependencies(self, external=False):
-    return self._definition.dependencies(external=external)
+  def dependencies(self, external=False, visited=None):
+    return self._definition.dependencies(external=external, visited=visited)
 
 class Property(Definition):          pass
 
@@ -169,14 +169,14 @@ class ArraySchema(IdentifiedSchema):
     # print(stack, "array", path)
     return self.items._select(*path, stack=stack)
 
-  def dependencies(self, external=False):
+  def dependencies(self, external=False, visited=None):
     if isinstance(self.items, Schema):
-      return self.items.dependencies(external=external)
+      return self.items.dependencies(external=external, visited=visited)
     else:
       return list({
         dependency \
         for item in self.items \
-        for dependency in item.dependencies(external=external)
+        for dependency in item.dependencies(external=external, visited=visited)
       })
 
 class Combination(IdentifiedSchema):
@@ -211,11 +211,11 @@ class Combination(IdentifiedSchema):
     stack.extend(local_stack)
     return result
 
-  def dependencies(self, external=False):
+  def dependencies(self, external=False, visited=None):
     return list({
       dependency \
       for option in self.options \
-      for dependency in option.dependencies(external=external)
+      for dependency in option.dependencies(external=external, visited=visited)
     })
 
 class AllOf(Combination): pass
@@ -298,14 +298,18 @@ class Reference(IdentifiedSchema):
   def is_remote(self):
     return not self.ref.startswith("#")
 
-  def dependencies(self, external=False):
+  def dependencies(self, external=False, visited=None):
+    if not visited: visited = []
+    if self in visited:
+      return []
+    visited.append(self)
     if self.is_remote:
       if external:
-        return list(set( self.resolve(return_definition=False).dependencies(external=external) + [ self ] ))
+        return list(set( self.resolve(return_definition=False).dependencies(external=external, visited=visited) + [ self ] ))
       else:
         return [ self ]
     else:
-      return list(set( self.resolve(return_definition=False).dependencies(external=external) ))
+      return list(set( self.resolve(return_definition=False).dependencies(external=external, visited=visited) ))
 
   def __hash__(self):
     return hash(self.ref)

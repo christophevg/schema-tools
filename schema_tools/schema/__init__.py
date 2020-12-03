@@ -135,7 +135,7 @@ class Schema(object):
   def items(self):
     return self.args.items()
 
-  def dependencies(self, external=False):
+  def dependencies(self, external=False, visited=None):
     return []
 
 class IdentifiedSchema(Schema): pass
