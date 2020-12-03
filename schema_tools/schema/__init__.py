@@ -32,7 +32,7 @@ class NodesMapper(ASTVisitor):
 
   def visit_object(self, object_node):
     properties = super().visit_object(object_node)
-    properties["location"] = self.location(object_node)
+    properties["_location"] = self.location(object_node)
 
     for name, mapper in self.mappers:
       result = mapper(properties)
@@ -56,10 +56,13 @@ class Mapper(object):
 
 class Schema(object):
   args = {}
+  _location = None
 
-  def __init__(self, location=None, **kwargs):
+  def __init__(self, **kwargs):
     self.parent   = None
-    self.location = location
+    self._location = None
+    if "_location" in kwargs:
+      self._location = kwargs.pop("_location")
     self.args     = kwargs   # catchall properties
     # drop examples
     if "examples" in kwargs and not isinstance(kwargs["examples"], IdentifiedSchema):
@@ -105,7 +108,7 @@ class Schema(object):
   def __repr__(self):
     props = { k: v for k, v in self.args.items() }  # TODO not "if v" ?
     props.update(self._more_repr())
-    props["location"] = self.location
+    props["<location>"] = self._location
     return "{}({})".format(
       self.__class__.__name__,
       ", ".join( [ "{}={}".format(k, v) for k, v in props.items() ] )
