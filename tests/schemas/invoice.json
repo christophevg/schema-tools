@@ -9,6 +9,9 @@
       "items": {
         "type" : "object",
         "properties" : {
+          "type" : {
+            "$ref" : "#/definitions/type"
+          },
           "product" : {
             "$ref" : "file:tests/schemas/product.json"
           },
@@ -20,6 +23,14 @@
           }
         }
       }
+    }
+  },
+  "definitions" : {
+    "type" : {
+      "enum" : [
+        "b2b",
+        "b2c"
+      ]
     }
   }
 }

@@ -294,7 +294,12 @@ class Reference(IdentifiedSchema):
     # print(self._stack, "ref", path)
     return self.resolve()._select(*path, stack=stack)
 
+  @property
+  def is_remote(self):
+    return not self.ref.startswith("#")
+
   def dependencies(self, resolve=False):
+    if not self.is_remote: return []
     if resolve:
       return  list(set( self.resolve().dependencies(resolve=resolve) + [ self ] ))
     else:
