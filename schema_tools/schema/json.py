@@ -7,21 +7,31 @@ from pathlib import Path
 from schema_tools import json, yaml
 from schema_tools.schema import Schema, Mapper, loads, IdentifiedSchema
 
+def log(*args):
+  if False: print(*args)
+
 class ObjectSchema(IdentifiedSchema):
-  def __init__(self, properties=[], definitions=[], allof=[], **kwargs):
+  def __init__(self, properties=[], definitions=[],
+                     allOf=None, anyOf=None, oneOf=None,
+                    **kwargs):
     super().__init__(**kwargs)
+
     if properties is None: properties = []
     self.properties = properties
     for prop in self.properties:
       prop.parent = self
+
     if definitions is None: definitions = []
     self.definitions = definitions
     for definition in self.definitions:
       definition.parent = self
-    if allof is None: allof = []
-    self.allof = allof
-    for allof in self.allof:
-      allof.parent = self
+
+    self.allOf = allOf
+    if self.allOf: self.allOf.parent = self
+    self.anyOf = anyOf
+    if self.anyOf: self.anyOf.parent = self
+    self.oneOf = oneOf
+    if self.oneOf: self.oneOf.parent = self
 
   def definition(self, key, return_definition=True):
     for definition in self.definitions:
@@ -29,13 +39,19 @@ class ObjectSchema(IdentifiedSchema):
         return definition.definition if return_definition else definition
     raise KeyError("'{}' is not a known definition".format(key))
 
+  def _combinations(self):
+    for combination in [ self.allOf, self.anyOf, self.oneOf ]:
+      if isinstance(combination, Combination):
+        for option in combination.options:
+          yield option
+
   def property(self, key, return_definition=True):
     # local properties
     for prop in self.properties:
       if prop.name == key:
         return prop.definition if return_definition else prop
-    # collected/all-of properties
-    for candidate in self.allof:
+    # collected/combinations properties
+    for candidate in self._combinations():
       if isinstance(candidate, Reference):
         candidate = candidate.resolve()
       try:
@@ -45,7 +61,7 @@ class ObjectSchema(IdentifiedSchema):
     raise KeyError("'{}' is not a known property".format(key))
 
   def _select(self, name, *remainder, stack=[]):
-    # print(stack, "object", name, remainder)
+    log(stack, "object", name, remainder)
     result = None
     try:
       result = self.property(name, return_definition=False)
@@ -60,7 +76,9 @@ class ObjectSchema(IdentifiedSchema):
     return {
       "properties"  : [ prop.name for prop in self.properties ],
       "definitions" : [ definition.name for definition in self.definitions ],
-      "allof"       : [ repr(candidate) for candidate in self.allof ]
+      # "allOf"       : [ repr(candidate) for candidate in self.allOf.options ],
+      # "oneOf"       : [ repr(candidate) for candidate in self.oneOf.options ],
+      # "anyOf"       : [ repr(candidate) for candidate in self.anyOf.options ]
     }
 
   def to_dict(self):
@@ -73,16 +91,24 @@ class ObjectSchema(IdentifiedSchema):
       out["definitions"] = {
         d.name : d.to_dict() for d in self.definitions 
       }
-    if self.allof:
-      out["allof"] = [
-         a.to_dict() for a in self.allof
+    if self.allOf:
+      out["allOf"] = [
+         a.to_dict() for a in self.allOf.options
+      ]
+    if self.oneOf:
+      out["oneOf"] = [
+         a.to_dict() for a in self.oneOf.options
+      ]
+    if self.anyOf:
+      out["anyOf"] = [
+         a.to_dict() for a in self.anyOf.options
       ]
     return out
 
   def dependencies(self, external=False, visited=None):
     return list({
       dependency \
-      for prop in self.properties + self.allof \
+      for prop in self.properties + list(self._combinations()) \
       for dependency in prop.dependencies(external=external, visited=visited)
     })
 
@@ -122,7 +148,7 @@ class Definition(IdentifiedSchema):
       return self._definition
 
   def _select(self, *path, stack=[]):
-    # print(stack, "definition/property", path)
+    log(stack, "definition/property", path)
     return self.definition._select(*path, stack=stack)
 
   def dependencies(self, external=False, visited=None):
@@ -166,7 +192,7 @@ class ArraySchema(IdentifiedSchema):
 
   def _select(self, *path, stack=[]):
     # TODO in case of (list, bool, None)
-    # print(stack, "array", path)
+    log(stack, "array", path)
     return self.items._select(*path, stack=stack)
 
   def dependencies(self, external=False, visited=None):
@@ -199,7 +225,7 @@ class Combination(IdentifiedSchema):
     return out
 
   def _select(self, *path, stack=[]):
-    # print(stack, "combination", path)
+    log(stack, "combination", path)
     best_stack = []
     result     = None
     for option in self.options:
@@ -255,6 +281,8 @@ class Reference(IdentifiedSchema):
     if fragment:
       if fragment.startswith("/definitions/"):
         name = fragment.replace("/definitions/", "")
+        if not doc.definition:
+          raise ValueError("doc " + repr(doc) + " has no definitions ?!")
         return doc.definition(name, return_definition=return_definition)
       elif fragment.startswith("/properties/"):
         name = fragment.replace("/properties/", "")
@@ -291,7 +319,7 @@ class Reference(IdentifiedSchema):
         raise ValueError("unable to parse '{}', due to '{}'".format(url, str(e)))
 
   def _select(self, *path, stack=[]):
-    # print(self._stack, "ref", path)
+    log(self._stack, "ref", path)
     return self.resolve()._select(*path, stack=stack)
 
   @property
@@ -341,7 +369,6 @@ class SchemaMapper(Mapper):
        self.has( properties, "type", list, containing="object") or \
        ( self.has(properties, "properties") and \
          not isinstance(properties["properties"], IdentifiedSchema) ):
-      # if not "type" in properties: properties["type"] = "object"
       # properties and definitions bubble up as Generic Schemas
       if self.has(properties, "properties"):
         properties["properties"] = [
@@ -360,6 +387,11 @@ class SchemaMapper(Mapper):
           Definition(name, definition) \
           for name, definition in components.schemas.items()
         ]
+      # extract combinations
+      for combination, cls in { "allOf" : AllOf, "oneOf" : OneOf, "anyOf": AnyOf }.items():
+        options = self._combine_options(properties, combination, combination.lower())
+        if options:
+          properties[combination] = cls(options=options)
       return ObjectSchema(**properties)
 
   def map_value(self, properties):
@@ -373,20 +405,33 @@ class SchemaMapper(Mapper):
     }
     if self.has(properties, "type", value_mapping):
       return value_mapping[properties["type"]](**properties)
-    
+
+  def _combine_options(self, properties, *keys):
+    combined = []
+    for key in keys:
+      if self.has(properties, key):
+        combined += properties.pop(key, {})
+    return combined
+
   def map_all_of(self, properties):
-    if self.has(properties, "allOf", list):
-      properties["options"] = properties.pop("allOf")
+    if "type" in properties: return
+    options = self._combine_options(properties, "allOf", "allof")
+    if options:
+      properties["options"] = options
       return AllOf(**properties)
 
   def map_any_of(self, properties):
-    if self.has(properties, "anyOf", list):
-      properties["options"] = properties.pop("anyOf")
+    if "type" in properties: return
+    options = self._combine_options(properties, "anyOf", "anyof")
+    if options:
+      properties["options"] = options
       return AnyOf(**properties)
 
   def map_one_of(self, properties):
-    if self.has(properties, "oneOf", list):
-      properties["options"] = properties.pop("oneOf")
+    if "type" in properties: return
+    options = self._combine_options(properties, "oneOf", "oneof")
+    if options:
+      properties["options"] = options
       return OneOf(**properties)
 
   def map_reference(self, properties):

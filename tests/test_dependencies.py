@@ -57,3 +57,45 @@ def test_dependencies_within_references(asset):
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
+
+
+def test_dependencies_in_combination(asset):
+  src = """
+{
+  "type" : "object",
+  "allOf" : [
+    { "$ref" : "#/definitions/x" },
+    { "$ref" : "#/definitions/y" },
+    { "$ref" : "#/definitions/z" }
+  ],
+  "definitions" : {
+    "x" : {
+      "type" : "object",
+      "properties" : {
+        "a": {
+          "type" : "string"
+        }
+      }
+    },
+    "y" : {
+      "type" : "object",
+      "properties" : {
+        "b": {
+          "type" : "string"
+        }
+      }
+    },
+    "z" : {
+      "type" : "object",
+      "properties" : {
+        "c": {
+          "$ref" : "file:%%%%"
+        }
+      }
+    }
+  }
+}
+""".replace("%%%%", asset("money.json"))
+
+  schema = loads(src)
+  assert len(schema.dependencies()) == 1
