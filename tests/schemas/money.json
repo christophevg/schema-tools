@@ -8,7 +8,7 @@
       "type": "integer"
     },
     "currency": {
-      "type" : "string"
+      "$ref" : "file:tests/schemas/currencies.json"
     }
   },
   "additionalProperties": false,

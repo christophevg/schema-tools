@@ -1,6 +1,6 @@
 from schema_tools.schema      import loads, load
 from schema_tools.schema.json import StringSchema, ObjectSchema, ArraySchema, IntegerSchema
-from schema_tools.schema.json import Definition, Property
+from schema_tools.schema.json import Definition, Property, Enum
 
 def test_simple_selections():
   json_src = """{
@@ -159,7 +159,7 @@ def test_external_reference_with_fragment(asset):
 
   schema = loads(json_src)
 
-  assert( isinstance(schema.select("foreign.currency").definition, StringSchema) )
+  assert( isinstance(schema.select("foreign.currency").definition, Enum) )
 
 def test_tracing(asset):
   schema = load(asset("invoice.json"))

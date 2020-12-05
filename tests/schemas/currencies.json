@@ -1,0 +1,10 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "file:tests/schemas/currencies.json",
+  "type": "string",
+  "version": 1,
+  "enum": [
+    "EUR",
+    "USD"
+  ]
+}

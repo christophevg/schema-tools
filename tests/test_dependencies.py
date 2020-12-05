@@ -7,11 +7,13 @@ def test_dependency_discovery(asset):
   #   product
   #     guid
   #     money
+  #       currencies
   #   money
+  #     currencies
   # ----------
   # product, guid, money
   assert len(schema.dependencies()) == 2                # product and money
-  assert len(schema.dependencies(external=True)) == 3   # guid in addition
+  assert len(schema.dependencies(external=True)) == 4   # + guid and currencies
 
 def test_dependencies_within_references(asset):
   src = """

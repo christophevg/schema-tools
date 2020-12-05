@@ -1,5 +1,5 @@
 from schema_tools.schema      import loads
-from schema_tools.schema.json import StringSchema, ObjectSchema, Reference
+from schema_tools.schema.json import StringSchema, ObjectSchema, Reference, Enum
 
 def test_simple_local_ref_to_definition():
   json_src = """{
@@ -90,7 +90,7 @@ def test_external_reference_with_fragment(asset):
   foreign = schema.property("foreign", return_definition=False)
   assert foreign.is_ref()
   assert isinstance(foreign._definition, Reference)
-  assert isinstance(schema.property("foreign"), StringSchema)
+  assert isinstance(schema.property("foreign"), Enum)
 
 def test_avoiding_recursing():
   src = """
