@@ -19,11 +19,12 @@ def scalar_constructor(type=None):
     value = type(value) if type else None
     return ValueNode(value, node.start_mark.line+1, node.start_mark.column+1)      
   return constructor
-yaml.add_constructor("tag:yaml.org,2002:str",   scalar_constructor(str),   YamlSchemaLoader)
-yaml.add_constructor("tag:yaml.org,2002:int",   scalar_constructor(int),   YamlSchemaLoader)
-yaml.add_constructor("tag:yaml.org,2002:float", scalar_constructor(float), YamlSchemaLoader)
-yaml.add_constructor("tag:yaml.org,2002:bool",  scalar_constructor(bool),  YamlSchemaLoader)
-yaml.add_constructor("tag:yaml.org,2002:null",  scalar_constructor(),      YamlSchemaLoader)
+yaml.add_constructor("tag:yaml.org,2002:timestamp",  scalar_constructor(str),   YamlSchemaLoader)
+yaml.add_constructor("tag:yaml.org,2002:str",        scalar_constructor(str),   YamlSchemaLoader)
+yaml.add_constructor("tag:yaml.org,2002:int",        scalar_constructor(int),   YamlSchemaLoader)
+yaml.add_constructor("tag:yaml.org,2002:float",      scalar_constructor(float), YamlSchemaLoader)
+yaml.add_constructor("tag:yaml.org,2002:bool",       scalar_constructor(bool),  YamlSchemaLoader)
+yaml.add_constructor("tag:yaml.org,2002:null",       scalar_constructor(),      YamlSchemaLoader)
 
 def list_constructor(loader, node):
   items = loader.construct_sequence(node)
