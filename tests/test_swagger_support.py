@@ -28,6 +28,23 @@ components:
   assert isinstance(schema.property("someotherthing"), ObjectSchema)
   assert isinstance(schema.select("someotherthing.foo").definition, StringSchema)
 
+def test_swagger_select_components():
+  src = """
+components:
+  schemas:
+    sometype:
+      type: string
+    someothertype:
+      type: object
+      properties:
+        foo:
+          type: string
+"""
+
+  schema = loads(src, parser=yaml)
+  assert isinstance(schema.definition("sometype"), StringSchema)
+  assert isinstance(schema.select("components.schemas.sometype").definition, StringSchema)
+
 def test_swagger_structure():
   yaml_src = """
 openapi: 3.0.0

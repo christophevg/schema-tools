@@ -64,13 +64,27 @@ class ObjectSchema(IdentifiedSchema):
     if stack is None: stack = []
     log(stack, "object", name, remainder)
     result = None
-    try:
-      result = self.property(name, return_definition=False)
-      stack.append(result)
-      if remainder:
-        result = result._select(*remainder, stack=stack)
-    except KeyError:
-      pass
+    # TODO generalize this at schema level
+    if name == "components" and remainder[0] == "schemas":
+      try:
+        remainder = list(remainder)
+        stack.append("components")
+        stack.append(remainder.pop(0))
+        name = remainder.pop(0)
+        result = self.definition(name, return_definition=False)
+        stack.append(result)
+        if remainder:
+          result = result._select(*remainder, stack=stack)
+      except KeyError:
+        pass
+    else:
+      try:
+        result = self.property(name, return_definition=False)
+        stack.append(result)
+        if remainder:
+          result = result._select(*remainder, stack=stack)
+      except KeyError:
+        pass
     return result
 
   def _more_repr(self):
@@ -369,7 +383,9 @@ class SchemaMapper(Mapper):
     if self.has( properties, "type", "object" ) or \
        self.has( properties, "type", list, containing="object") or \
        ( self.has(properties, "properties") and \
-         not isinstance(properties["properties"], IdentifiedSchema) ):
+         not isinstance(properties["properties"], IdentifiedSchema) ) or \
+       ( self.has(properties, "components") and \
+         not isinstance(properties["components"], IdentifiedSchema) ):
       # properties and definitions bubble up as Generic Schemas
       if self.has(properties, "properties"):
         properties["properties"] = [
