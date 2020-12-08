@@ -442,4 +442,3 @@ class SchemaMapper(Mapper):
   def map_enum(self, properties):
     if self.has(properties, "enum", list):
       return Enum(**properties)
-

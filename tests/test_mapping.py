@@ -26,6 +26,25 @@ def test_different_value_schemas(asset):
   assert not m.is_valid
   assert m.errors
 
+def test_warning_for_cast_value_to_string(asset):
+  source = IntegerSchema()
+  target = StringSchema()
+
+  m = Mapping(source, target)
+
+  assert m.is_valid
+  assert not m.errors
+  assert m.warnings
+
+def test_warning_for_cast_enum_to_string(asset):
+  source = Enum(enum=["Test"])
+  target = StringSchema()
+
+  m = Mapping(source, target)
+
+  assert m.is_valid
+  assert not m.errors
+  assert m.warnings
 
 def test_simple_enum_mapping(asset):
   source = load(asset("product.json")).select("cost.currency").definition
