@@ -11,7 +11,7 @@ def log(*args):
   if False: print(*args)
 
 class ObjectSchema(IdentifiedSchema):
-  def __init__(self, properties=[], definitions=[],
+  def __init__(self, properties=None, definitions=None,
                      allOf=None, anyOf=None, oneOf=None,
                     **kwargs):
     super().__init__(**kwargs)
@@ -60,7 +60,8 @@ class ObjectSchema(IdentifiedSchema):
         pass
     raise KeyError("'{}' is not a known property".format(key))
 
-  def _select(self, name, *remainder, stack=[]):
+  def _select(self, name, *remainder, stack=None):
+    if stack is None: stack = []
     log(stack, "object", name, remainder)
     result = None
     try:
@@ -147,7 +148,7 @@ class Definition(IdentifiedSchema):
     else:
       return self._definition
 
-  def _select(self, *path, stack=[]):
+  def _select(self, *path, stack=None):
     log(stack, "definition/property", path)
     return self.definition._select(*path, stack=stack)
 
@@ -190,7 +191,7 @@ class ArraySchema(IdentifiedSchema):
       out["items"] = self.items
     return out
 
-  def _select(self, *path, stack=[]):
+  def _select(self, *path, stack=None):
     # TODO in case of (list, bool, None)
     log(stack, "array", path)
     return self.items._select(*path, stack=stack)
@@ -206,9 +207,9 @@ class ArraySchema(IdentifiedSchema):
       })
 
 class Combination(IdentifiedSchema):
-  def __init__(self, options=[], **kwargs):
+  def __init__(self, options=None, **kwargs):
     super().__init__(**kwargs)
-    self.options = options
+    self.options = options if options else []
     for option in self.options:
       option.parent = self
   
@@ -224,7 +225,7 @@ class Combination(IdentifiedSchema):
     out[name] = [ o.to_dict() for o in self.options ]
     return out
 
-  def _select(self, *path, stack=[]):
+  def _select(self, *path, stack=None):
     log(stack, "combination", path)
     best_stack = []
     result     = None
@@ -318,7 +319,7 @@ class Reference(IdentifiedSchema):
       except Exception as e:
         raise ValueError("unable to parse '{}', due to '{}'".format(url, str(e)))
 
-  def _select(self, *path, stack=[]):
+  def _select(self, *path, stack=None):
     log(self._stack, "ref", path)
     return self.resolve()._select(*path, stack=stack)
 
@@ -349,9 +350,9 @@ class Reference(IdentifiedSchema):
       return False
 
 class Enum(IdentifiedSchema):
-  def __init__(self, enum=[], **kwargs):
+  def __init__(self, enum=None, **kwargs):
     super().__init__(**kwargs)
-    self.values = enum
+    self.values = enum if enum else []
   
   def _more_repr(self):
     return {

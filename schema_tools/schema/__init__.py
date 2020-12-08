@@ -74,7 +74,7 @@ class Schema(object):
     except KeyError:
       return None
 
-  def select(self, *path, stack=[]):
+  def select(self, *path, stack=None):
     path = self._clean(path)
     if not path: return None
     # print("select", path)
@@ -101,7 +101,7 @@ class Schema(object):
     if len(path) == 1: path = path[0].split(".")
     return path
 
-  def _select(self, *path, stack=[]):
+  def _select(self, *path, stack=None):
     # print(stack, "schema", path)
     return None # default
 
