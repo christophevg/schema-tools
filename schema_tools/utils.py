@@ -68,7 +68,7 @@ class ASTVisitor(Visitor):
 
   def visit_object(self, object_node):
     self.level += 1
-    children = { key : self.visit(child) for key, child in object_node.items() }
+    children = { str(key) : self.visit(child) for key, child in object_node.items() }
     self.level -= 1
     return children
 
