@@ -185,7 +185,7 @@ class ArraySchema(IdentifiedSchema):
     self.items = items
     if isinstance(self.items, Schema):
       self.items.parent = self
-    elif isinstance(self.items, (list, bool)) or self.items is None:
+    elif isinstance(self.items, bool) or self.items is None:
       pass
     else:
       raise ValueError("unsupported items type: '{}'".format(
@@ -205,20 +205,74 @@ class ArraySchema(IdentifiedSchema):
       out["items"] = self.items
     return out
 
-  def _select(self, *path, stack=None):
-    # TODO in case of (list, bool, None)
-    log(stack, "array", path)
-    return self.items._select(*path, stack=stack)
+  def _select(self, index, *path, stack=None):
+    # TODO in case of (bool, None)
+    log(stack, "array", index, path)
+    if isinstance(self.items, Schema):
+      return self.items._select(index, *path, stack=stack)
 
   def dependencies(self, external=False, visited=None):
     if isinstance(self.items, Schema):
       return self.items.dependencies(external=external, visited=visited)
+    elif isinstance(self.items, bool) or self.items is None:
+      return []
     else:
       return list({
         dependency \
         for item in self.items \
         for dependency in item.dependencies(external=external, visited=visited)
       })
+
+class TupleItem(Definition):
+  def _more_repr(self):
+    return {
+      "index"      : self.name,
+      "definition" : repr(self._definition)
+    }
+
+class TupleSchema(IdentifiedSchema):
+  def __init__(self, items=None, **kwargs):
+    super().__init__(**kwargs)
+    self.items = items
+    if not isinstance(self.items, list):
+      raise ValueError("tuple items should be list, not: '{}'".format(
+        self.items.__class__.__name__)
+      )
+    for item in self.items:
+      item.parent = self
+
+  def _more_repr(self):
+    return {
+      "items" : repr(self.items)
+    }
+
+  def item(self, index):
+    return self[index].definition
+
+  def __getitem__(self, index):
+    if not isinstance(index, int):
+      raise TypeError("tuple access only with numeric indices")
+    return self.items[index]
+
+
+  def to_dict(self):
+    out = super().to_dict()
+    out["items"] = [ item.to_dict() for item in self.items ]
+    return out
+
+  def _select(self, index, *path, stack=None):
+    log(stack, "tuple", index, path)
+    if path:
+      return self[int(index)]._select(*path, stack=stack)
+    else:
+      return self[int(index)]
+
+  def dependencies(self, external=False, visited=None):
+    return list({
+      dependency \
+      for item in self.items \
+      for dependency in item.dependencies(external=external, visited=visited)
+    })
 
 class Combination(IdentifiedSchema):
   def __init__(self, options=None, **kwargs):
@@ -417,11 +471,20 @@ class SchemaMapper(Mapper):
       "integer": IntegerSchema,
       "null":    NullSchema,
       "number":  NumberSchema,
-      "string":  StringSchema,
-      "array":   ArraySchema
+      "string":  StringSchema
     }
     if self.has(properties, "type", value_mapping):
       return value_mapping[properties["type"]](**properties)
+
+  def map_array(self, properties):
+    if not self.has(properties, "type", "array"): return
+    if self.has(properties, "items", list):
+      properties["items"] = [
+        TupleItem(index, definition) \
+        for index, definition in enumerate(properties["items"])
+      ]
+      return TupleSchema(**properties)
+    return ArraySchema(**properties)
 
   def _combine_options(self, properties, *keys):
     combined = []

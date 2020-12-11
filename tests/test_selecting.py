@@ -1,5 +1,6 @@
 from schema_tools.schema      import loads, load
-from schema_tools.schema.json import StringSchema, ObjectSchema, ArraySchema, IntegerSchema
+from schema_tools.schema.json import ObjectSchema, ArraySchema, TupleSchema
+from schema_tools.schema.json import StringSchema, IntegerSchema
 from schema_tools.schema.json import Definition, Property, Enum
 
 def test_simple_selections():
@@ -271,3 +272,38 @@ def test_overlapping_paths():
   trace = schema.trace("collection.product.label.nl")
   assert len(trace) == 4
   assert trace[1].definition.tag == 3
+
+def test_accessing_array_tuple():
+  src = """
+{
+  "type" : "object",
+  "properties" : {
+    "list" : {
+      "type" : "array",
+      "items" : [
+        {
+          "type" : "string"
+        },
+        {
+          "type" : "object",
+          "properties" : {
+            "value" : {
+              "type" : "integer"
+            }
+          }
+        }
+      ]
+    }
+  }
+}
+"""
+
+  schema = loads(src)
+  assert isinstance(schema.property("list"), TupleSchema)
+  assert isinstance(schema.property("list")[0].definition, StringSchema)
+  assert isinstance(schema.property("list")[1].definition.property("value"), IntegerSchema)
+
+  assert isinstance(schema.property("list").item(1).property("value"), IntegerSchema)
+
+  assert isinstance(schema.select("list.0").definition, StringSchema)
+  assert isinstance(schema.select("list.1.value").definition, IntegerSchema)

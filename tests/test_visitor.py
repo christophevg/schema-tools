@@ -1,6 +1,6 @@
 from schema_tools             import yaml
 from schema_tools.schema      import build
-from schema_tools.schema.json import IntegerSchema, StringSchema
+from schema_tools.schema.json import IntegerSchema, StringSchema, TupleItem
 
 def test_allow_for_empty_properties():
   # empty properties shouldn't fail building object schema from AST
@@ -33,6 +33,6 @@ def test_allow_for_tuple_items():
   schema = build(ast)
   assert isinstance(schema.something.items, list)
   assert len(schema.something.items) == 2
-  assert isinstance(schema.something.items[0], IntegerSchema)
-  assert isinstance(schema.something.items[1], StringSchema)
-  
+  assert isinstance(schema.something.items[0], TupleItem)
+  assert isinstance(schema.something.items[0].definition, IntegerSchema)
+  assert isinstance(schema.something.items[1].definition, StringSchema)

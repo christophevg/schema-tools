@@ -255,4 +255,22 @@ def test_combination_with_schema_dumping():
   schema = loads(src)
   d = schema.to_dict()
   s = json.dumps(d)
-  
+
+def test_array_tuple_support():
+  src = """
+{
+  "type" : "array",
+  "items" : [
+    {
+      "type" : "string"
+    },
+    {
+      "type" : "integer"
+    }
+  ]
+}
+"""
+
+  schema = loads(src)
+  d = schema.to_dict()
+  s = json.dumps(d)

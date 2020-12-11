@@ -101,3 +101,21 @@ def test_dependencies_in_combination(asset):
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
+
+def test_dependencies_in_tuple(asset):
+  src = """
+{
+  "type" : "array",
+  "items" : [
+    {
+      "type" : "string"
+    },
+    {
+      "$ref" : "file:%%%%"
+    }
+  ]
+}
+""".replace("%%%%", asset("money.json"))
+
+  schema = loads(src)
+  assert len(schema.dependencies()) == 1
