@@ -333,13 +333,6 @@ class Reference(IdentifiedSchema):
   def to_dict(self):
     return { "$ref" : self.ref }
 
-  @property
-  def root(self):
-    p = self.parent
-    while not p.parent is None:
-      p = p.parent
-    return p
-
   def resolve(self, return_definition=True):
     url, fragment = urldefrag(self.ref)
     if url:
@@ -380,7 +373,7 @@ class Reference(IdentifiedSchema):
 
     src = doc.text
     try:
-      return loads(src)
+      return loads(src, origin=url)
     except:
       try:
         return loads(src, parser=yaml)

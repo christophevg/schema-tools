@@ -8,14 +8,16 @@ from schema_tools        import json
 from schema_tools.utils  import ASTVisitor
 
 def load(path, parser=json):
-  return build(parser.load(path))
+  return build(parser.load(path), origin=path)
 
-def loads(src, parser=json):
-  return build(parser.loads(src))
+def loads(src, parser=json, origin=None):
+  return build(parser.loads(src), origin=origin)
 
-def build(nodes):
+def build(nodes, origin=None):
   from schema_tools.schema.json import SchemaMapper
-  return NodesMapper(SchemaMapper()).visit(nodes)
+  schema = NodesMapper(SchemaMapper()).visit(nodes)
+  schema._origin = origin
+  return schema
 
 class NodesMapper(ASTVisitor):
   def __init__(self, *mappers):
@@ -57,10 +59,12 @@ class Mapper(object):
 class Schema(object):
   args = {}
   _location = None
+  _origin   = None
 
   def __init__(self, **kwargs):
-    self.parent   = None
+    self.parent    = None
     self._location = None
+    self._origin   = None
     if "_location" in kwargs:
       self._location = kwargs.pop("_location")
     self.args     = kwargs   # catchall properties
@@ -140,5 +144,17 @@ class Schema(object):
 
   def dependencies(self, external=False, visited=None):
     return []
+
+  @property
+  def root(self):
+    if not self.parent: return self
+    p = self.parent
+    while not p.parent is None:
+      p = p.parent
+    return p
+
+  @property
+  def origin(self):
+    return self.root._origin
 
 class IdentifiedSchema(Schema): pass

@@ -92,6 +92,23 @@ def test_external_reference_with_fragment(asset):
   assert isinstance(foreign._definition, Reference)
   assert isinstance(schema.property("foreign"), Enum)
 
+def test_origin_of_external_reference(asset):
+  json_src = """{
+    "type": "object",
+    "properties" : {
+      "foreign" : {
+        "$ref" : "file:%%%%"
+      }
+    }
+  }
+  """.replace("%%%%", asset("money.json#/properties/currency"))
+
+  schema = loads(json_src)
+  
+  assert isinstance(schema.property("foreign"), Enum)
+  assert isinstance(schema.property("foreign"), Enum)
+  assert schema.property("foreign").origin.endswith("currencies.json")
+
 def test_avoiding_recursing():
   src = """
 {
