@@ -267,11 +267,11 @@ def test_overlapping_paths():
   schema = loads(src)
   trace = schema.trace("collection.product.label")
   assert len(trace) == 3
-  assert trace[1].definition.tag == 2
+  assert trace[1].definition.tag.value == 2
 
   trace = schema.trace("collection.product.label.nl")
   assert len(trace) == 4
-  assert trace[1].definition.tag == 3
+  assert trace[1].definition.tag.value == 3
 
 def test_accessing_array_tuple():
   src = """
@@ -307,3 +307,28 @@ def test_accessing_array_tuple():
 
   assert isinstance(schema.select("list.0").definition, StringSchema)
   assert isinstance(schema.select("list.1.value").definition, IntegerSchema)
+
+def test_end_of_trace_is_top_level_schema(asset):
+  src = """
+{
+  "type" : "object",
+  "properties" : {
+    "level" : {
+      "type": "object",
+      "properties" : {
+        "id" : {
+          "$ref" : "file:%%%%"
+        }
+      }
+    }
+  }
+}
+""".replace("%%%%", asset("guid.json"))
+
+  schema = loads(src)
+  trace = schema.trace("level.id")
+  assert len(trace) == 2
+  assert trace[0]._location.line == 5
+  assert trace[1]._location.line == 8
+  assert trace[1]._origin is None
+  assert trace[1].definition._origin.endswith("tests/schemas/guid.json")

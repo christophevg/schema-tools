@@ -1,5 +1,5 @@
 from schema_tools.schema      import load
-from schema_tools.schema.json import IntegerSchema, StringSchema, Enum
+from schema_tools.schema.json import IntegerSchema, StringSchema, Enum, ConstantValueSchema
 from schema_tools.mapping     import Mapping
 
 def test_simple_string_mapping(asset):
@@ -37,7 +37,7 @@ def test_warning_for_cast_value_to_string(asset):
   assert m.warnings
 
 def test_warning_for_cast_enum_to_string(asset):
-  source = Enum(enum=["Test"])
+  source = Enum(enum=[ConstantValueSchema(value="Test")])
   target = StringSchema()
 
   m = Mapping(source, target)
@@ -61,7 +61,7 @@ def test_simple_enum_mapping(asset):
 
 def test_simple_enum_mapping(asset):
   source = load(asset("product.json")).select("cost.currency").definition
-  target = Enum(enum=["EUR"])
+  target = Enum(enum=[ConstantValueSchema(value="EUR")])
 
   assert isinstance(source, Enum)
   assert isinstance(target, Enum)

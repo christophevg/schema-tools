@@ -22,4 +22,5 @@ def test_nested_selections():
   """
 
   schema = loads(src)
-  assert schema.select("home.address").definition._location.line == 7
+  assert schema.select("home")._location.line == 4
+  assert schema.select("home.address")._location.line == 7

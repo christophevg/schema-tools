@@ -5,7 +5,7 @@ from urllib.parse import urldefrag, urlparse
 from pathlib import Path
 
 from schema_tools import json, yaml
-from schema_tools.schema import Schema, Mapper, loads, IdentifiedSchema
+from schema_tools.schema import Schema, Mapper, loads, IdentifiedSchema, ConstantValueSchema
 
 def log(*args):
   if False: print(*args)
@@ -18,8 +18,14 @@ class ObjectSchema(IdentifiedSchema):
 
     if properties is None: properties = []
     self.properties = properties
-    for prop in self.properties:
-      prop.parent = self
+    if isinstance(self.properties, list):
+      for prop in self.properties:
+        prop.parent = self
+    elif isinstance(self.properties, ConstantValueSchema):
+      if self.properties.value is None:
+        self.properties = []
+    else:
+      raise ValueError("can't handle properties", self.properties)
 
     if definitions is None: definitions = []
     self.definitions = definitions
@@ -133,8 +139,7 @@ class Definition(IdentifiedSchema):
     self._definition       = definition
     if isinstance(self._definition, Schema):
       self._definition.parent = self
-    elif isinstance(self._definition, bool):
-      pass
+      self._location = self._definition._location
     else:
       raise ValueError("unsupported items type: '{}'".format(
         self.items.__class__.__type__)
@@ -185,8 +190,8 @@ class ArraySchema(IdentifiedSchema):
     self.items = items
     if isinstance(self.items, Schema):
       self.items.parent = self
-    elif isinstance(self.items, bool) or self.items is None:
-      pass
+    elif self.items is None:
+      self.items = []
     else:
       raise ValueError("unsupported items type: '{}'".format(
         self.items.__class__.__name__)
@@ -206,7 +211,7 @@ class ArraySchema(IdentifiedSchema):
     return out
 
   def _select(self, index, *path, stack=None):
-    # TODO in case of (bool, None)
+    # TODO in case of (None)
     log(stack, "array", index, path)
     if isinstance(self.items, Schema):
       return self.items._select(index, *path, stack=stack)
@@ -214,8 +219,6 @@ class ArraySchema(IdentifiedSchema):
   def dependencies(self, external=False, visited=None):
     if isinstance(self.items, Schema):
       return self.items.dependencies(external=external, visited=visited)
-    elif isinstance(self.items, bool) or self.items is None:
-      return []
     else:
       return list({
         dependency \
@@ -320,7 +323,7 @@ class OneOf(Combination): pass
 class Reference(IdentifiedSchema):
   def __init__(self, ref=None, **kwargs):
     super().__init__(**kwargs)
-    self.ref = ref
+    self.ref = ref.value
 
   def __repr__(self):
     return "Reference(ref={})".format( self.ref )
@@ -413,7 +416,13 @@ class Reference(IdentifiedSchema):
 class Enum(IdentifiedSchema):
   def __init__(self, enum=None, **kwargs):
     super().__init__(**kwargs)
-    self.values = enum if enum else []
+    self.values = []
+    if enum:
+      for e in enum:
+        if not isinstance(e, ConstantValueSchema):
+          raise ValueError("not constant value", e)
+        else:
+          self.values.append(e.value)
   
   def _more_repr(self):
     return {
@@ -467,14 +476,14 @@ class SchemaMapper(Mapper):
       "string":  StringSchema
     }
     if self.has(properties, "type", value_mapping):
-      return value_mapping[properties["type"]](**properties)
+      return value_mapping[properties["type"].value](**properties)
 
   def map_array(self, properties):
     if not self.has(properties, "type", "array"): return
     if self.has(properties, "items", list):
       properties["items"] = [
-        TupleItem(index, definition) \
-        for index, definition in enumerate(properties["items"])
+        TupleItem(index, value) \
+        for index, value in enumerate(properties["items"])
       ]
       return TupleSchema(**properties)
     return ArraySchema(**properties)

@@ -30,7 +30,7 @@ class NodesMapper(ASTVisitor):
     ]
 
   def visit_value(self, value_node):
-    return value_node()
+    return ConstantValueSchema(value=value_node(), _location=self.location(value_node))
 
   def visit_object(self, object_node):
     properties = super().visit_object(object_node)
@@ -44,17 +44,21 @@ class NodesMapper(ASTVisitor):
 
 class Mapper(object):
   def has(self, properties, name, of_type=None, containing=None):
+    if not name in properties: return False
+    value = properties[name]
+    if isinstance(value, ConstantValueSchema):
+      value = value.value
     if of_type:
       if isinstance(of_type, str):
-        return name in properties and properties[name] == of_type      
+        return value == of_type      
       elif isinstance(of_type, dict):
-        return name in properties and properties[name] in of_type
+        return value in of_type
       else:
-        if name in properties and isinstance(properties[name], of_type):
-          if not containing or containing in properties[name]:
+        if isinstance(value, of_type):
+          if not containing or containing in value:
             return True
         return False
-    return name in properties and properties[name]
+    return bool(value)
 
 class Schema(object):
   args = {}
@@ -158,3 +162,8 @@ class Schema(object):
     return self.root._origin
 
 class IdentifiedSchema(Schema): pass
+
+class ConstantValueSchema(IdentifiedSchema):
+  def to_dict(self):
+    return self.value
+
