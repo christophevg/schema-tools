@@ -19,7 +19,8 @@ def test_allow_for_no_items():
     type: array
   """)
   schema = build(ast)
-  assert schema.something.items is None
+  assert isinstance(schema.something.items, list)
+  assert len(schema.something.items) == 0
 
 def test_allow_for_tuple_items():
   # tuple properties shouldn't fail building object schema from AST
