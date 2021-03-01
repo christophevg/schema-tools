@@ -102,27 +102,28 @@ class ObjectSchema(IdentifiedSchema):
       # "anyOf"       : [ repr(candidate) for candidate in self.anyOf.options ]
     }
 
-  def to_dict(self):
-    out = super().to_dict()
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
+    out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     if self.properties:
       out["properties"] = {
-        p.name : p.to_dict() for p in self.properties 
+        p.name : p.to_dict(deref=deref, prefix=prefix, stack=stack+["properties"]) for p in self.properties 
       }
     if self.definitions:
       out["definitions"] = {
-        d.name : d.to_dict() for d in self.definitions 
+        d.name : d.to_dict(deref=deref, prefix=prefix, stack=stack+["definitions"]) for d in self.definitions 
       }
     if self.allOf:
       out["allOf"] = [
-         a.to_dict() for a in self.allOf.options
+         a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.allOf.options
       ]
     if self.oneOf:
       out["oneOf"] = [
-         a.to_dict() for a in self.oneOf.options
+         a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.oneOf.options
       ]
     if self.anyOf:
       out["anyOf"] = [
-         a.to_dict() for a in self.anyOf.options
+         a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.anyOf.options
       ]
     return out
 
@@ -161,9 +162,10 @@ class Definition(IdentifiedSchema):
       "definition" : repr(self._definition)
     }
 
-  def to_dict(self):
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
     if isinstance(self._definition, Schema):
-      return self._definition.to_dict()
+      return self._definition.to_dict(deref=deref, prefix=prefix, stack=stack + [self.name])
     else:
       return self._definition
 
@@ -202,10 +204,11 @@ class ArraySchema(IdentifiedSchema):
       "items" : repr(self.items)
     }
 
-  def to_dict(self):
-    out = super().to_dict()
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
+    out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     if isinstance(self.items, Schema):
-      out["items"] = self.items.to_dict()
+      out["items"] = self.items.to_dict(deref=deref, prefix=prefix, stack=stack)
     else:
       out["items"] = self.items
     return out
@@ -258,9 +261,10 @@ class TupleSchema(IdentifiedSchema):
     return self.items[index]
 
 
-  def to_dict(self):
-    out = super().to_dict()
-    out["items"] = [ item.to_dict() for item in self.items ]
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
+    out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
+    out["items"] = [ item.to_dict(deref=deref, prefix=prefix, stack=stack) for item in self.items ]
     return out
 
   def _select(self, index, *path, stack=None):
@@ -289,11 +293,12 @@ class Combination(IdentifiedSchema):
       "options"  : len(self.options)
     }
 
-  def to_dict(self):
-    out = super().to_dict()
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
+    out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     name = self.__class__.__name__
     name = name[0].lower() + name[1:]
-    out[name] = [ o.to_dict() for o in self.options ]
+    out[name] = [ o.to_dict(deref=deref, prefix=prefix, stack=stack) for o in self.options ]
     return out
 
   def _select(self, *path, stack=None):
@@ -333,7 +338,15 @@ class Reference(IdentifiedSchema):
       "$ref" : self.ref
     }
 
-  def to_dict(self):
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
+    if prefix is None: prefix = "#"
+    if deref: 
+      if self.is_remote:
+        prefix = "#/" + "/".join(stack)
+        return self.resolve().to_dict(deref=deref, prefix=prefix, stack=stack)
+      else:
+        return { "$ref" : prefix + self.ref[1:] }
     return { "$ref" : self.ref }
 
   def resolve(self, return_definition=True):
@@ -429,7 +442,7 @@ class Enum(IdentifiedSchema):
       "enum"  : self.values
     }
 
-  def to_dict(self):
+  def to_dict(self, deref=False, prefix=None, stack=None):
     return { "enum" : self.values }
 
 

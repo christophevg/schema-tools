@@ -125,15 +125,16 @@ class Schema(object):
   def _more_repr(self):
     return {}
 
-  def to_dict(self):
+  def to_dict(self, deref=False, prefix=None, stack=None):
+    if stack is None: stack = []
     items = {}
     for k, v in self.args.items():
       if isinstance(v, Schema):
-        v = v.to_dict()
+        v = v.to_dict(deref=deref, prefix=prefix, stack=stack+[k])
       elif isinstance(v, list):
         vv = []
         for i in v:
-          vv.append(i.to_dict() if isinstance(i, Schema) else i)
+          vv.append(i.to_dict(deref=deref, prefix=prefix, stack=stack+[k]) if isinstance(i, Schema) else i)
         v = vv
       elif v is None or isinstance(v, (str, int, float)):
         pass
@@ -164,6 +165,5 @@ class Schema(object):
 class IdentifiedSchema(Schema): pass
 
 class ConstantValueSchema(IdentifiedSchema):
-  def to_dict(self):
+  def to_dict(self, deref=False, prefix=None, stack=None):
     return self.value
-

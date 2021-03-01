@@ -9,6 +9,14 @@
     },
     "currency": {
       "$ref" : "file:tests/schemas/currencies.json"
+    },
+    "taxed" : {
+      "$ref" : "#/definitions/taxed"
+    }
+  },
+  "definitions" : {
+    "taxed" : {
+      "type" : "boolean"
     }
   },
   "additionalProperties": false,
