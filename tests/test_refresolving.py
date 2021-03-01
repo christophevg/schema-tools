@@ -1,5 +1,6 @@
 from schema_tools.schema      import loads
 from schema_tools.schema.json import StringSchema, ObjectSchema, Reference, Enum
+from schema_tools.schema.json import ArraySchema
 
 def test_simple_local_ref_to_definition():
   json_src = """{
@@ -133,3 +134,34 @@ def test_avoiding_recursing():
   schema = loads(src)
   dependencies = schema.dependencies()
   assert True
+
+def test_array_items_byref():
+  src = """
+{
+  "type" : "object",
+  "properties" : {
+    "humanity" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/definitions/human"
+      }
+    }
+  },
+  "definitions" : {
+    "human" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}
+"""
+  schema = loads(src)
+  humanity = schema.property("humanity")
+  assert isinstance(humanity.items, Reference)
+  assert isinstance(humanity.items.resolve(), ObjectSchema)
+  assert isinstance(humanity.items.resolve().property("name"), StringSchema)
+
