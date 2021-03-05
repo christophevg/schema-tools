@@ -27,10 +27,10 @@ class ObjectSchema(IdentifiedSchema):
     else:
       raise ValueError("can't handle properties", self.properties)
 
-    if definitions is None: definitions = []
-    self.definitions = definitions
-    for definition in self.definitions:
-      definition.parent = self
+    self.definitions = []
+    if definitions:
+      for definition in definitions:
+        self.add_definition(definition)
 
     self.allOf = allOf
     if self.allOf: self.allOf.parent = self
@@ -38,6 +38,10 @@ class ObjectSchema(IdentifiedSchema):
     if self.anyOf: self.anyOf.parent = self
     self.oneOf = oneOf
     if self.oneOf: self.oneOf.parent = self
+
+  def add_definition(self, definition):
+    definition.parent = self
+    self.definitions.append(definition)
 
   def definition(self, key, return_definition=True):
     for definition in self.definitions:
@@ -353,7 +357,14 @@ class Reference(IdentifiedSchema):
     return { "$ref" : self.ref }
 
   def resolve(self, return_definition=True, strip_id=False):
-    url, fragment = urldefrag(self.ref)
+    url = None
+    fragment = None
+    parts = self.ref.split("#")
+    if len(parts) == 1:
+      url = self.ref
+    else:
+      url = parts[0]
+      fragment = parts[1]
     if url:
       doc = self._fetch(url)
       if strip_id:
@@ -364,22 +375,36 @@ class Reference(IdentifiedSchema):
     else:
       doc = self.root
 
-    if fragment:
-      if fragment.startswith("/definitions/"):
-        name = fragment.replace("/definitions/", "")
-        if not doc.definition:
-          raise ValueError("doc " + repr(doc) + " has no definitions ?!")
-        return doc.definition(name, return_definition=return_definition)
-      elif fragment.startswith("/properties/"):
-        name = fragment.replace("/properties/", "")
-        return doc.property(name, return_definition=return_definition)
-      elif fragment.startswith("/components/schemas/"):
-        name = fragment.replace("/components/schemas/", "")
-        return doc.definition(name, return_definition=return_definition)
-      else:
-        raise NotImplementedError
+    if not fragment: return doc
 
-    return doc
+    name = None
+
+    if fragment.startswith("/definitions/"):
+      name = fragment.replace("/definitions/", "")
+      if not doc.definition:
+        raise ValueError("doc " + repr(doc) + " has no definitions ?!")
+      fragment_schema = doc.definition(name, return_definition=return_definition)
+    elif fragment.startswith("/properties/"):
+      name = fragment.replace("/properties/", "")
+      fragment_schema = doc.property(name, return_definition=return_definition)
+    elif fragment.startswith("/components/schemas/"):
+      name = fragment.replace("/components/schemas/", "")
+      fragment_schema = doc.definition(name, return_definition=return_definition)
+    else:
+      raise NotImplementedError
+
+    # FIXME: when refering to a fragment, the fragment itself can refer to
+    #        something else in its own file. A partial solution here includes
+    #        all other definitions. Refering to properties or the whole schema
+    #        remains problematic.
+
+    if isinstance(fragment_schema, ObjectSchema) and doc.definition:
+      for definition in doc.definitions:
+        if definition.name != name:
+          print("adding", definition.name)
+          fragment_schema.add_definition(Definition(definition.name, definition._definition))
+      
+    return fragment_schema
 
   def _fetch(self, url):
     s = requests.Session()
@@ -402,6 +427,7 @@ class Reference(IdentifiedSchema):
       try:
         return loads(src, parser=yaml)
       except Exception as e:
+        print(src)
         raise ValueError("unable to parse '{}', due to '{}'".format(url, str(e)))
 
   def _select(self, *path, stack=None):

@@ -4,6 +4,7 @@ def test_dependency_discovery(asset):
   original_file = asset("invoice.json")
   schema = load(original_file)
   # invoice
+  #   kind
   #   product
   #     guid
   #     money
@@ -12,8 +13,8 @@ def test_dependency_discovery(asset):
   #     currencies
   # ----------
   # product, guid, money
-  assert len(schema.dependencies()) == 2                # product and money
-  assert len(schema.dependencies(external=True)) == 4   # + guid and currencies
+  assert len(schema.dependencies()) == 3                # kind, product & money
+  assert len(schema.dependencies(external=True)) == 5   # + guid and currencies
 
 def test_dependencies_within_references(asset):
   src = """

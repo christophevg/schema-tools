@@ -12,6 +12,9 @@
           "type" : {
             "$ref" : "#/definitions/type"
           },
+          "kind" : {
+            "$ref" : "file:tests/schemas/product.json#/definitions/kind"
+          },
           "product" : {
             "$ref" : "file:tests/schemas/product.json"
           },

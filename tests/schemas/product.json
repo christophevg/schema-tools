@@ -16,5 +16,20 @@
     "subproduct" : {
       "$ref" : "#"
     }
+  },
+  "definitions" : {
+    "kindEnum" : {
+      "enum" : [
+        "a", "b", "c"
+      ]
+    },
+    "kind" : {
+      "type" : "object",
+      "properties" : {
+        "x": {
+          "$ref" : "#/definitions/kindEnum"
+        }
+      }
+    }
   }
 }

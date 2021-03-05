@@ -29,4 +29,10 @@ def test_ensure_dereferenced_combinations_generate_correct_ref_path(asset):
 
   assert d["properties"]["lines"]["anyOf"][1]["properties"]["subproduct"]["$ref"] == \
     "#/properties/lines/anyOf/1"
-  
+
+def test_ensure_dereferenced_fragment_includes_local_references(asset):
+  original_file = asset("invoice.json")
+  d = load(original_file).to_dict(deref=True)
+
+  assert "definitions" in d["properties"]["lines"]["items"]["properties"]["kind"]
+  assert "kindEnum" in d["properties"]["lines"]["items"]["properties"]["kind"]["definitions"]
