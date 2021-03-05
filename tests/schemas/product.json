@@ -12,6 +12,9 @@
     },
     "cost": {
       "$ref" : "file:tests/schemas/money.json"
+    },
+    "subproduct" : {
+      "$ref" : "#"
     }
   }
 }

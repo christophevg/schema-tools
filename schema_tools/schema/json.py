@@ -208,7 +208,7 @@ class ArraySchema(IdentifiedSchema):
     if stack is None: stack = []
     out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     if isinstance(self.items, Schema):
-      out["items"] = self.items.to_dict(deref=deref, prefix=prefix, stack=stack)
+      out["items"] = self.items.to_dict(deref=deref, prefix=prefix, stack=stack+["items"])
     else:
       out["items"] = self.items
     return out
