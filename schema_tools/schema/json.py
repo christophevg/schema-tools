@@ -344,15 +344,20 @@ class Reference(IdentifiedSchema):
     if deref: 
       if self.is_remote:
         prefix = "#/" + "/".join(stack)
-        return self.resolve().to_dict(deref=deref, prefix=prefix, stack=stack)
+        return self.resolve(strip_id=True).to_dict(deref=deref, prefix=prefix, stack=stack)
       else:
         return { "$ref" : prefix + self.ref[1:] }
     return { "$ref" : self.ref }
 
-  def resolve(self, return_definition=True):
+  def resolve(self, return_definition=True, strip_id=False):
     url, fragment = urldefrag(self.ref)
     if url:
       doc = self._fetch(url)
+      if strip_id:
+        try:
+          del doc.args["$id"]
+        except KeyError:
+          pass
     else:
       doc = self.root
 

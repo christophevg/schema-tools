@@ -16,3 +16,9 @@ def test_deref_to_dict(asset):
   assert product["properties"]["id"]["type"] == "string"
   assert product["properties"]["cost"]["properties"]["taxed"]["$ref"] == \
     "#/properties/lines/properties/product/properties/cost/definitions/taxed"
+
+def test_ensure_derereferenced_schemas_drop_local_ids(asset):
+  original_file = asset("invoice.json")
+  d = load(original_file).to_dict(deref=True)
+
+  assert "$id" not in d["properties"]["lines"]["items"]["properties"]["product"]
