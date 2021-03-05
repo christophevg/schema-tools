@@ -22,3 +22,11 @@ def test_ensure_derereferenced_schemas_drop_local_ids(asset):
   d = load(original_file).to_dict(deref=True)
 
   assert "$id" not in d["properties"]["lines"]["items"]["properties"]["product"]
+
+def test_ensure_dereferenced_combinations_generate_correct_ref_path(asset):
+  original_file = asset("combination.json")
+  d = load(original_file).to_dict(deref=True)
+
+  assert d["properties"]["lines"]["anyOf"][1]["properties"]["subproduct"]["$ref"] == \
+    "#/properties/lines/anyOf/1"
+  

@@ -298,7 +298,10 @@ class Combination(IdentifiedSchema):
     out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     name = self.__class__.__name__
     name = name[0].lower() + name[1:]
-    out[name] = [ o.to_dict(deref=deref, prefix=prefix, stack=stack) for o in self.options ]
+    out[name] = [
+      o.to_dict(deref=deref, prefix=prefix, stack=stack+[name]+[str(index)]) \
+      for index, o in enumerate(self.options)
+    ]
     return out
 
   def _select(self, *path, stack=None):
