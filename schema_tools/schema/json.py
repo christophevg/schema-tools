@@ -357,14 +357,15 @@ class Reference(IdentifiedSchema):
     return { "$ref" : self.ref }
 
   def resolve(self, return_definition=True, strip_id=False):
-    url = None
-    fragment = None
+    url      = ""
+    fragment = ""
     parts = self.ref.split("#")
     if len(parts) == 1:
       url = self.ref
     else:
-      url = parts[0]
+      url      = parts[0]
       fragment = parts[1]
+
     if url:
       doc = self._fetch(url)
       if strip_id:
@@ -375,9 +376,11 @@ class Reference(IdentifiedSchema):
     else:
       doc = self.root
 
-    if not fragment: return doc
+    if not fragment:
+      return doc
 
     name = None
+    fragment_schema = None
 
     if fragment.startswith("/definitions/"):
       name = fragment.replace("/definitions/", "")
@@ -393,15 +396,14 @@ class Reference(IdentifiedSchema):
     else:
       raise NotImplementedError
 
-    # FIXME: when refering to a fragment, the fragment itself can refer to
+    # FIXME: when refering to a non local fragment, the fragment can refer to
     #        something else in its own file. A partial solution here includes
     #        all other definitions. Refering to properties or the whole schema
     #        remains problematic.
 
-    if isinstance(fragment_schema, ObjectSchema) and doc.definition:
+    if url and isinstance(fragment_schema, ObjectSchema) and doc.definition:
       for definition in doc.definitions:
         if definition.name != name:
-          print("adding", definition.name)
           fragment_schema.add_definition(Definition(definition.name, definition._definition))
       
     return fragment_schema
