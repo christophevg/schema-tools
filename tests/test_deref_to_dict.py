@@ -1,10 +1,10 @@
-from schema_tools.schema import load, loads
+from schema_tools.schema import load
 
 def test_deref_to_dict(asset):
   original_file = asset("invoice.json")
   d = load(original_file).to_dict(deref=True)
 
-  # undereferenced top-level definition and 1st level dereferenced definition 
+  # undereferenced top-level definition and 1st level dereferenced definition
   items = d["properties"]["lines"]["items"]
   assert items["properties"]["type"]["$ref"] == "#/definitions/type"
   assert items["properties"]["price"]["properties"]["taxed"]["$ref"] ==  \

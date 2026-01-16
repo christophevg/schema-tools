@@ -4,10 +4,10 @@ from schema_tools.ast     import ValueNode
 
 def test_comparable_parsing():
   dumper = ASTDumper()
-  
+
   json_src = """{
     "a" : 1,
-    "b" : [ 
+    "b" : [
       2,
       3,
     ],
@@ -19,7 +19,7 @@ def test_comparable_parsing():
   }"""
 
   json_ast = json.loads(json_src)
-  json_txt = dumper.dump(json_ast)
+  dumper.dump(json_ast)
 
   yaml_src = """
   a : 1
@@ -34,7 +34,7 @@ def test_comparable_parsing():
   """
 
   yaml_ast = yaml.loads(yaml_src)
-  yaml_txt = dumper.dump(yaml_ast)
+  dumper.dump(yaml_ast)
 
   assert(json_ast == yaml_ast)
 

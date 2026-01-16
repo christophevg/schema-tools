@@ -59,7 +59,7 @@ def test_simple_enum_mapping(asset):
   assert not m.errors
 
 
-def test_simple_enum_mapping(asset):
+def test_simple_enum_mapping2(asset):
   source = load(asset("product.json")).select("cost.currency").definition
   target = Enum(enum=[ConstantValueSchema(value="EUR")])
 

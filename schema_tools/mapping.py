@@ -6,12 +6,14 @@ class ValidationIssue(object):
 
   def __str__(self):
     return "{}: {}".format(self.__class__.__name__, self.msg)
-  
+
   def __repr__(self):
     return str(self)
 
-class Warning(ValidationIssue): pass
-class Error(ValidationIssue): pass
+class Warning(ValidationIssue):
+  pass
+class Error(ValidationIssue):
+  pass
 
 class Mapping(object):
   def __init__(self, source, target):
@@ -22,7 +24,7 @@ class Mapping(object):
   @property
   def is_valid(self):
     return self._validate()
-  
+
   @property
   def issues(self):
     self._validate()
@@ -48,7 +50,7 @@ class Mapping(object):
 
   def __str__(self):
     return "source:{}\ntarget:{}".format(repr(self.source), repr(self.target))
-  
+
   # TODO make this more generic and easier to simply add checks
 
   def _validate(self):
@@ -70,7 +72,8 @@ class Mapping(object):
     )
 
   def _validate_value_schemas(self):
-    if self.source.__class__ is self.target.__class__: return True
+    if self.source.__class__ is self.target.__class__:
+      return True
     if self.target.__class__ is StringSchema:
       return self.warn(
         "target type, 'StringSchema', accepts '{}' with cast",
@@ -83,7 +86,7 @@ class Mapping(object):
       )
 
   def _validate_enum_schemas(self):
-    if not self.source.__class__ is self.target.__class__:
+    if self.source.__class__ is not self.target.__class__:
       return self.error(
         "source type '{}' doesn't match target type '{}'",
           self.source.__class__.__name__, self.target.__class__.__name__

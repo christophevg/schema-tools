@@ -1,7 +1,7 @@
 from schema_tools        import yaml
 from schema_tools.schema import loads
 
-from schema_tools.schema.json import StringSchema, ObjectSchema, Property
+from schema_tools.schema.json import StringSchema, ObjectSchema
 
 def test_swagger_component_definitions():
   src = """

@@ -1,5 +1,5 @@
 from schema_tools             import json, yaml
-from schema_tools.schema      import loads, load
+from schema_tools.schema      import loads
 from schema_tools.schema.json import StringSchema, IntegerSchema
 from schema_tools.schema.json import ObjectSchema, Reference, AnyOf, Property
 
@@ -16,7 +16,7 @@ def test_string_schema():
   """
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema, StringSchema)
 
 def test_object_schema():
@@ -37,7 +37,7 @@ def test_object_schema():
   """
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "url"
@@ -64,13 +64,13 @@ def test_nested_object_schema():
         "required" : [
           "url"
         ]
-      } 
+      }
     }
   }
   """
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "address"
@@ -100,13 +100,13 @@ def test_definitions():
         "required" : [
           "url"
         ]
-      } 
+      }
     }
   }
   """
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema, ObjectSchema)
   assert len(schema.definitions) == 1
   assert schema.definitions[0].name == "address"
@@ -141,13 +141,13 @@ def test_ref():
         "required" : [
           "url"
         ]
-      } 
+      }
     }
   }
   """
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "home"
@@ -186,13 +186,13 @@ def test_anyof():
         "required" : [
           "url"
         ]
-      } 
+      }
     }
   }
   """
-  
+
   schema = loads(json_src)
-  
+
   assert isinstance(schema, ObjectSchema)
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "home"
@@ -218,7 +218,7 @@ definitions:
     type: object
     properties:
       y:
-        type: integer        
+        type: integer
 """
   schema = loads(src, parser=yaml)
   assert isinstance(schema.property("x"), StringSchema)
@@ -254,7 +254,7 @@ def test_combination_with_schema_dumping():
 """
   schema = loads(src)
   d = schema.to_dict()
-  s = json.dumps(d)
+  json.dumps(d)
 
 def test_array_tuple_support():
   src = """
@@ -273,4 +273,4 @@ def test_array_tuple_support():
 
   schema = loads(src)
   d = schema.to_dict()
-  s = json.dumps(d)
+  json.dumps(d)

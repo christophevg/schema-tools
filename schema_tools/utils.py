@@ -12,7 +12,8 @@ def node_location(node):
       node.__class__.__name__
     ))
 
-class VisitorException(Exception): pass
+class VisitorException(Exception):
+  pass
 
 class Visitor(object):
   def __init__(self, value_class, list_class, object_class):
@@ -56,7 +57,7 @@ class ASTVisitor(Visitor):
 
   def location(self, node):
     return node_location(node)
-  
+
   def visit_value(self, value_node):
     raise NotImplementedError
 

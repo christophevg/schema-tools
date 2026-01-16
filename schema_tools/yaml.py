@@ -1,5 +1,4 @@
 import yaml
-from yaml.loader import SafeLoader
 
 from schema_tools.ast import ValueNode, ListNode, ObjectNode
 
@@ -17,7 +16,7 @@ def scalar_constructor(type=None):
   def constructor(loader, node):
     value = loader.construct_scalar(node)
     value = type(value) if type else None
-    return ValueNode(value, node.start_mark.line+1, node.start_mark.column+1)      
+    return ValueNode(value, node.start_mark.line+1, node.start_mark.column+1)
   return constructor
 yaml.add_constructor("tag:yaml.org,2002:timestamp",  scalar_constructor(str),   YamlSchemaLoader)
 yaml.add_constructor("tag:yaml.org,2002:str",        scalar_constructor(str),   YamlSchemaLoader)

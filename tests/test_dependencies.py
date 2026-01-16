@@ -36,7 +36,7 @@ def test_dependencies_within_references(asset):
   schema = loads(src)
   assert len(schema.dependencies()) == 1
 
-def test_dependencies_within_references(asset):
+def test_dependencies_within_references2(asset):
   src = """
 {
   "type": "object",

@@ -1,4 +1,5 @@
 from schema_tools.schema import Schema, Mapper
+from schema_tools.schema.json import ObjectSchema, Definition, Property
 
 class Components(Schema):
   def __init__(self, schemas=[], **kwargs):
@@ -34,7 +35,7 @@ class Components(Schema):
     out = super().to_dict()
     if self.schemas:
       out["schemas"] = {
-        s.name : s.to_dict() for p in self.schemas
+        s.name : s.to_dict() for s in self.schemas
       }
     return out
 
@@ -46,17 +47,17 @@ class Components(Schema):
   #   })
 
 class SwaggerMapper(Mapper):
-  
+
   def map_components(self, properties):
     if self.has( properties, "components" ) and \
        self.has( properties["components"], "schemas" ):
-      schemas = [
-        Definition(name, definition) \
-        for name, definition in properties["components"]["schemas"].items()
-      ]
-      return 
+      # schemas = [
+      #   Definition(name, definition) \
+      #   for name, definition in properties["components"]["schemas"].items()
+      # ]
+      # return
 
-      schemas = properties["schemas"]
+      # schemas = properties["schemas"]
       properties["schemas"] = [
         Property(name, definition) \
         for name, definition in properties["properties"].items()

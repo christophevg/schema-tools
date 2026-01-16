@@ -1,6 +1,5 @@
 from schema_tools.schema      import loads
 from schema_tools.schema.json import StringSchema, ObjectSchema, Reference, Enum
-from schema_tools.schema.json import ArraySchema
 
 def test_simple_local_ref_to_definition():
   json_src = """{
@@ -34,11 +33,11 @@ def test_simple_local_ref_to_definition():
         "required" : [
           "url"
         ]
-      } 
+      }
     }
   }
   """
-  
+
   schema = loads(json_src)
 
   assert isinstance(schema.property("home").options[1], Reference)
@@ -61,7 +60,7 @@ def test_external_references(asset):
   """.replace("%%%%", asset("guid.json"))
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema,                   ObjectSchema)
   home = schema.property("home", return_definition=False)
   assert home.is_ref()
@@ -86,7 +85,7 @@ def test_external_reference_with_fragment(asset):
   """.replace("%%%%", asset("money.json#/properties/currency"))
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema, ObjectSchema)
   foreign = schema.property("foreign", return_definition=False)
   assert foreign.is_ref()
@@ -105,7 +104,7 @@ def test_origin_of_external_reference(asset):
   """.replace("%%%%", asset("money.json#/properties/currency"))
 
   schema = loads(json_src)
-  
+
   assert isinstance(schema.property("foreign"), Enum)
   assert isinstance(schema.property("foreign"), Enum)
   assert schema.property("foreign").origin.endswith("currencies.json")
@@ -132,7 +131,7 @@ def test_avoiding_recursing():
 }
 """
   schema = loads(src)
-  dependencies = schema.dependencies()
+  schema.dependencies()
   assert True
 
 def test_array_items_byref():
@@ -164,4 +163,3 @@ def test_array_items_byref():
   assert isinstance(humanity.items, Reference)
   assert isinstance(humanity.items.resolve(), ObjectSchema)
   assert isinstance(humanity.items.resolve().property("name"), StringSchema)
-

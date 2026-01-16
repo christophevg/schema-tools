@@ -2,10 +2,10 @@ import collections
 
 import inspect
 
-UnknownProperty = collections.namedtuple("UnknownProperty", "name definition")
-
 from schema_tools        import json
 from schema_tools.utils  import ASTVisitor
+
+UnknownProperty = collections.namedtuple("UnknownProperty", "name definition")
 
 def load(path, parser=json):
   return build(parser.load(path), origin=path)
@@ -38,19 +38,21 @@ class NodesMapper(ASTVisitor):
 
     for name, mapper in self.mappers:
       result = mapper(properties)
-      if result: return result
+      if result:
+        return result
 
     return Schema(**properties)
 
 class Mapper(object):
   def has(self, properties, name, of_type=None, containing=None):
-    if not name in properties: return False
+    if name not in properties:
+      return False
     value = properties[name]
     if isinstance(value, ConstantValueSchema):
       value = value.value
     if of_type:
       if isinstance(of_type, str):
-        return value == of_type      
+        return value == of_type
       elif isinstance(of_type, dict):
         return value in of_type
       else:
@@ -84,13 +86,15 @@ class Schema(object):
 
   def select(self, *path, stack=None):
     path = self._clean(path)
-    if not path: return None
+    if not path:
+      return None
     # print("select", path)
     return self._select(*path, stack=stack)
 
   def trace(self, *path):
     path = self._clean(path)
-    if not path: return []
+    if not path:
+      return []
     # print("trace", path)
     stack = []
     self.select(*path, stack=stack)
@@ -100,13 +104,15 @@ class Schema(object):
     return stack
 
   def _clean(self, path):
-    if not path or path[0] is None: return None
+    if not path or path[0] is None:
+      return None
     # ensure all parts in the path are strings
     for step in path:
       if not isinstance(step, str):
         raise ValueError("only string paths are selectable")
     # single path can be dotted string
-    if len(path) == 1: path = path[0].split(".")
+    if len(path) == 1:
+      path = path[0].split(".")
     return path
 
   def _select(self, *path, stack=None):
@@ -126,7 +132,8 @@ class Schema(object):
     return {}
 
   def to_dict(self, deref=False, prefix=None, stack=None):
-    if stack is None: stack = []
+    if stack is None:
+      stack = []
     items = {}
     for k, v in self.args.items():
       if isinstance(v, Schema):
@@ -152,9 +159,10 @@ class Schema(object):
 
   @property
   def root(self):
-    if not self.parent: return self
+    if not self.parent:
+      return self
     p = self.parent
-    while not p.parent is None:
+    while p.parent is not None:
       p = p.parent
     return p
 
@@ -162,7 +170,8 @@ class Schema(object):
   def origin(self):
     return self.root._origin
 
-class IdentifiedSchema(Schema): pass
+class IdentifiedSchema(Schema):
+  pass
 
 class ConstantValueSchema(IdentifiedSchema):
   def to_dict(self, deref=False, prefix=None, stack=None):

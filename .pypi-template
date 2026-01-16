@@ -18,6 +18,8 @@ package_module_name: schema_tools
 package_name: schema-tools
 package_tagline: Collection of tools to parse, query, map,... Json/Yaml schemas
 package_title: Schema Tools
+project_env: pypi-template
+readme: .github/README.md
 requires:
 - json-cfg
 - pyyaml
@@ -29,7 +31,8 @@ skip:
 - docs
 - tests
 - (package_module_name)
-- requirements.txt
+test_requires: []
+version: 1.5.1
 your_author_name: Christophe VG
 your_email_address: contact@christophe.vg
 your_full_name: Christophe Van Ginneken
