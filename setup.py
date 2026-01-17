@@ -14,9 +14,11 @@ CLASSIFIERS      = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Environment :: Console",
-  "License :: OSI Approved :: MIT License",
   "Topic :: Software Development",
   
 ]
@@ -25,10 +27,18 @@ INSTALL_REQUIRES = [
   "pyyaml",
   "requests",
   "requests-file",
+  "rich",
+  "xmlschema",
+  "elementpath",
+  "fire",
+  "flask",
   
 ]
 ENTRY_POINTS = {
-  
+  "console_scripts" : [
+    "schema-tools=schema_tools.__main__:cli",
+    
+  ]
 }
 SCRIPTS = [
   

@@ -1,3 +1,4 @@
 include .github/README.md
+recursive-include schema_tools/resources *
 global-exclude __pycache__
 global-exclude *.py[co]

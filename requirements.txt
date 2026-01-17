@@ -2,4 +2,9 @@ json-cfg
 pyyaml
 requests
 requests-file
+rich
+xmlschema
+elementpath
+fire
+flask
 
