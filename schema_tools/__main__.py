@@ -36,8 +36,12 @@ def validate(xml_filename):
         resource_root / "PEPPOL-EN16931-UBL.sch"
       ])
 
-fire.Fire({
-  "validate"           : validate,
-  "query"              : schematron.query,
-  "generate_functions" : schematron.generate_functions
-})
+def cli():
+  fire.Fire({
+    "validate"           : validate,
+    "query"              : schematron.query,
+    "generate_functions" : schematron.generate_functions
+  })
+
+if __name__ == "__main__":
+  cli()
