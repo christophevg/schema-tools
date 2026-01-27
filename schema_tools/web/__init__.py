@@ -54,11 +54,13 @@ def validate():
     ubl = request.form.get("ubl")
     xml_root = xml.parse(ubl)
 
+    doctype = request.form.get("doctype")
+
     # running from package, setup files context
     with as_file(files(resources)) as resource_root:
       if xml.validate(
         xml_root,
-        resource_root / "UBL-2/xsd/maindoc/UBL-Invoice-2.1.xsd"
+        resource_root / f"UBL-2/xsd/maindoc/UBL-{doctype}-2.1.xsd"
       ):
         schematron.validate(xml_root, [
           resource_root / "CEN-EN16931-UBL.sch",

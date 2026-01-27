@@ -18,6 +18,13 @@
       <h1>Peppol UBL Validation</h1>
       <form action="validate" method="POST">
         <div class="mb-3">
+          <label for="doctype" class="form-label">Document Type</label>
+          <select class="form-select" name="doctype" aria-label="Document Type">
+            <option selected value="Invoice">Invoice</option>
+            <option value="CreditNote">Credit Note</option>
+          </select>
+        </div>
+        <div class="mb-3">
           <label for="ubl" class="form-label">UBL</label>
           <textarea class="form-control" name="ubl" id="ubl" rows="20"></textarea>
         </div>

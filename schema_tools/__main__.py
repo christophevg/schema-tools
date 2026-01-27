@@ -25,11 +25,11 @@ logging.basicConfig(
   handlers=[RichHandler()]
 )
 
-def validate(xml_filename):
+def validate(xml_filename, doctype="Invoice"):
   with as_file(files(resources)) as resource_root:
     xml_root = xml.load(xml_filename)
     if xml.validate(
-      xml_root, resource_root / "UBL-2/xsd/maindoc/UBL-Invoice-2.1.xsd"
+      xml_root, resource_root / f"UBL-2/xsd/maindoc/UBL-{doctype}-2.1.xsd"
     ):
       schematron.validate(xml_root, [
         resource_root / "CEN-EN16931-UBL.sch",
