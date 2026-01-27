@@ -4,7 +4,7 @@ from flask import Flask, render_template, request
 
 from pathlib import Path
 
-from importlib.resources import files
+from importlib.resources import files, as_file
 
 from schema_tools import xml
 
@@ -55,7 +55,7 @@ def validate():
     xml_root = xml.parse(ubl)
 
     # running from package, setup files context
-    with files(resources) as resource_root:
+    with as_file(files(resources)) as resource_root:
       if xml.validate(
         xml_root,
         resource_root / "UBL-2/xsd/maindoc/UBL-Invoice-2.1.xsd"
