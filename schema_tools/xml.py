@@ -1,7 +1,8 @@
-import xmlschema
 from xml.etree import ElementTree
 
 from pathlib import Path
+
+from schema_tools.schema import xml as xml_schema
 
 import logging
 logger = logging.getLogger(__name__)
@@ -13,24 +14,6 @@ def parse(src):
     logger.error(f"[red][XML] {ex}", extra={"markup": True})
   return None
 
-def validate(xml_root, xsd_filename):
-  logger.info(
-    f"validating against XSD '{xsd_filename.name}'",
-    extra={"markup": True}
-  )
-  # XSD validation
-  try:
-    xmlschema.validate(xml_root, xsd_filename)
-    return True
-  except xmlschema.validators.exceptions.XMLSchemaValidationError as ex:
-    logger.error(f"[red][XSD][/red] {ex}", extra={"markup": True})
-  except xmlschema.exceptions.XMLResourceParseError as ex:
-    logger.error(f"[red][XSD] {ex}[/red]", extra={"markup": True})
-  except xmlschema.validators.exceptions.XMLSchemaChildrenValidationError as ex:
-    logger.error(f"[red][XSD] {ex.reason}[/red]", extra={"markup": True})
-    logger.debug(str(ex)) # full exception with schema and instance excerpts
-  return False
-
 def load(xml_filename, xsd_filename=None):
   """
   optionally performs XSD schema validation, loads an XML file, returning a parsed ElementTree
@@ -41,7 +24,7 @@ def load(xml_filename, xsd_filename=None):
     return None
 
   if xsd_filename:
-    if not validate(xml_root, xsd_filename):
+    if not xml_schema.validate(xml_root, xsd_filename):
       return None
 
   return xml_root

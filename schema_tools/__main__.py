@@ -4,10 +4,8 @@ import logging
 
 import fire
 
-from importlib.resources import as_file, files
-
 from schema_tools        import xml
-from schema_tools        import resources
+from schema_tools.schema import ubl
 from schema_tools.schema import schematron
 
 from rich.logging import RichHandler
@@ -26,15 +24,8 @@ logging.basicConfig(
 )
 
 def validate(xml_filename, doctype="Invoice"):
-  with as_file(files(resources)) as resource_root:
-    xml_root = xml.load(xml_filename)
-    if xml.validate(
-      xml_root, resource_root / f"UBL-2/xsd/maindoc/UBL-{doctype}-2.1.xsd"
-    ):
-      schematron.validate(xml_root, [
-        resource_root / "CEN-EN16931-UBL.sch",
-        resource_root / "PEPPOL-EN16931-UBL.sch"
-      ])
+  xml_root = xml.load(xml_filename)
+  ubl.validate(xml_root, doctype=doctype)
 
 def cli():
   fire.Fire({

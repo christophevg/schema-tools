@@ -4,12 +4,8 @@ from flask import Flask, render_template, request
 
 from pathlib import Path
 
-from importlib.resources import files, as_file
-
-from schema_tools import xml
-
-from schema_tools.schema import schematron
-from schema_tools import resources
+from schema_tools        import xml
+from schema_tools.schema import ubl
 
 from rich.logging import RichHandler
 from rich.console import Console
@@ -51,23 +47,11 @@ def validate():
     api_key = request.form.get("api-key")
     if api_key != API_KEY:
       raise ValueError("please provide an API key to use this service")
-    ubl = request.form.get("ubl")
-    xml_root = xml.parse(ubl)
-
-    doctype = request.form.get("doctype")
-
-    # running from package, setup files context
-    with as_file(files(resources)) as resource_root:
-      if xml.validate(
-        xml_root,
-        resource_root / f"UBL-2/xsd/maindoc/UBL-{doctype}-2.1.xsd"
-      ):
-        schematron.validate(xml_root, [
-          resource_root / "CEN-EN16931-UBL.sch",
-          resource_root / "PEPPOL-EN16931-UBL.sch"
-        ])
+    src      = request.form.get("ubl")
+    doctype  = request.form.get("doctype")
+    xml_root = xml.parse(src)
+    ubl.validate(xml_root, doctype=doctype)
   except Exception as ex:
     # logger.exception(ex)
     logger.error(f"[bold red]Whoops:[/bold red] {ex}", extra={"markup": True})
-
   return console.export_html()

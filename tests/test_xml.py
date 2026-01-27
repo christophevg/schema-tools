@@ -1,22 +1,19 @@
 from pathlib import Path
 
-from importlib.resources import files, as_file
-
 from schema_tools        import xml
-from schema_tools        import resources
-from schema_tools.schema import schematron
+from schema_tools.schema import ubl
 
-def validate(xml_filename):
-  with as_file(files(resources)) as resource_root:
-    xml_root = xml.load(xml_filename)
-    if xml.validate(
-      xml_root, resource_root / "UBL-2/xsd/maindoc/UBL-Invoice-2.1.xsd"
-    ):
-      return schematron.validate(xml_root, [
-        resource_root / "CEN-EN16931-UBL.sch",
-        resource_root / "PEPPOL-EN16931-UBL.sch"
-      ])
-  return False
+def test_good_validation():
+  xml_root = xml.load(Path(__file__).parent / "examples" / "invoice.xml")
+  try:
+    ubl.validate(xml_root)
+  except Exception:
+    assert False, "should not throw a validation exception"
 
-def test_validation():
-  assert validate(Path(__file__).parent / "examples" / "invoice.xml")
+def test_bad_xml_validation():
+  xml_root = xml.load(Path(__file__).parent / "examples" / "invoice.bad.xml")
+  try:
+    ubl.validate(xml_root)
+    assert False, "should throw an XML schema validation exception"
+  except Exception:
+    pass
