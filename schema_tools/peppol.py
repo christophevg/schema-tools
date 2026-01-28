@@ -30,6 +30,7 @@ def check(id, include_details=False,
   logger.debug(f"DNS NAPTR domain: '{url}'")
 
   resolver = dns.resolver.Resolver()
+  resolver.nameservers = ["8.8.8.8"]
 
   try:
     # resolve NAPTR domain
