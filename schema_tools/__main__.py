@@ -4,7 +4,7 @@ import logging
 
 import fire
 
-from schema_tools        import xml
+from schema_tools        import peppol
 from schema_tools.schema import ubl
 from schema_tools.schema import schematron
 
@@ -23,15 +23,11 @@ logging.basicConfig(
   handlers=[RichHandler()]
 )
 
-def validate(xml_filename, doctype="Invoice"):
-  xml_root = xml.load(xml_filename)
-  ubl.validate(xml_root, doctype=doctype)
-
 def cli():
   fire.Fire({
-    "validate"           : validate,
-    "query"              : schematron.query,
-    "generate_functions" : schematron.generate_functions
+    "ubl"       : ubl.cli,
+    "schematron": schematron.cli,
+    "peppol"    : peppol.cli
   })
 
 if __name__ == "__main__":

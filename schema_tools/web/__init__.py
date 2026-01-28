@@ -4,7 +4,10 @@ from flask import Flask, render_template, request
 
 from pathlib import Path
 
+import json
+
 from schema_tools        import xml
+from schema_tools        import peppol
 from schema_tools.schema import ubl
 
 from rich.logging import RichHandler
@@ -37,21 +40,38 @@ app = Flask(
 )
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
+def check_api_key():
+  api_key = request.form.get("api-key")
+  if api_key != API_KEY:
+    raise ValueError("please provide an API key to use this service")
+
+def protected(func):
+  def wrapper():
+    try:
+      check_api_key()
+      result = func()
+      if result:
+        logger.info(result)
+    except Exception as ex:
+      # logger.exception(ex)
+      logger.error(f"[bold red]Whoops:[/bold red] {ex}", extra={"markup": True})
+    return console.export_html()
+  return wrapper
+
 @app.route("/")
 def home():
   return render_template("index.html")
 
-@app.route("/validate", methods=["POST"])
+@app.route("/peppol/validate", methods=["POST"], endpoint="validate")
+@protected
 def validate():
-  try:
-    api_key = request.form.get("api-key")
-    if api_key != API_KEY:
-      raise ValueError("please provide an API key to use this service")
-    src      = request.form.get("ubl")
-    doctype  = request.form.get("doctype")
-    xml_root = xml.parse(src)
-    ubl.validate(xml_root, doctype=doctype)
-  except Exception as ex:
-    # logger.exception(ex)
-    logger.error(f"[bold red]Whoops:[/bold red] {ex}", extra={"markup": True})
-  return console.export_html()
+  src      = request.form.get("ubl")
+  doctype  = request.form.get("doctype")
+  xml_root = xml.parse(src)
+  return ubl.validate(xml_root, doctype=doctype)
+
+@app.route("/peppol/check", methods=["POST"], endpoint="check")
+@protected
+def check():
+  participant = request.form.get("participant")
+  return json.dumps(peppol.check(participant), indent=2)

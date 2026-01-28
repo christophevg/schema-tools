@@ -199,7 +199,7 @@ def query(query, xml_filename, context=None):
   """
   performs an XPath query on a provided XML file, optionally given a 'context'
   example:
-    % schema-tools query "@schemeID" tests/examples/invoice.xml  "cac:AccountingSupplierParty/cac:Party/cbc:EndpointID"
+    % schema-tools schematron query "@schemeID" tests/examples/invoice.xml  "cac:AccountingSupplierParty/cac:Party/cbc:EndpointID"
     0088
   """
   xml_root   = xml.load(xml_filename)
@@ -257,3 +257,9 @@ def generate_functions(schematron_filename):
     for arg in select_find(function, "param", namespaces=namespaces):
       args[arg.get("name")] = arg.get("as", "xs:anyAtomicType?").strip()
     console.print(_gen(name, retval, args))
+
+# expose cli-enabled functions
+cli = {
+  "query"              : query,
+  "generate_functions" : generate_functions
+}
