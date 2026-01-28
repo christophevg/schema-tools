@@ -33,6 +33,8 @@ requires:
 - elementpath
 - fire
 - flask
+- dnspython
+- xmltodict
 scripts: []
 skip:
 - MANIFEST.in

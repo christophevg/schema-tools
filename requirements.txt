@@ -7,4 +7,6 @@ xmlschema
 elementpath
 fire
 flask
+dnspython
+xmltodict
 

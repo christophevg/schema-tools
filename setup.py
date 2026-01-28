@@ -32,6 +32,8 @@ INSTALL_REQUIRES = [
   "elementpath",
   "fire",
   "flask",
+  "dnspython",
+  "xmltodict",
   
 ]
 ENTRY_POINTS = {
