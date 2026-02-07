@@ -34,6 +34,8 @@ INSTALL_REQUIRES = [
   "flask",
   "dnspython",
   "xmltodict",
+  "markdown",
+  "jinja2_highlight",
   
 ]
 ENTRY_POINTS = {

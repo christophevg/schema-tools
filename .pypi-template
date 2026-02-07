@@ -35,6 +35,8 @@ requires:
 - flask
 - dnspython
 - xmltodict
+- markdown
+- jinja2_highlight
 scripts: []
 skip:
 - MANIFEST.in

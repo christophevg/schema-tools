@@ -16,12 +16,18 @@
     <div class="container my-5">
 
       <ul class="nav nav-pills" id="myTab" role="tablist">
+
         <li class="nav-item" role="presentation">
           <button class="nav-link active" id="peppol-ubl-validation-tab" data-bs-toggle="tab" data-bs-target="#peppol-ubl-validation-tab-pane" type="button" role="tab" aria-controls="peppol-ubl-validation-tab-pane" aria-selected="true">Peppol UBL Validation</button>
         </li>
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="peppol-participant-check-tab" data-bs-toggle="tab" data-bs-target="#peppol-participant-check-tab-pane" type="button" role="tab" aria-controls="peppol-participant-check-tab-pane" aria-selected="false">Peppol Participant Check</button>
         </li>
+
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="xml-view-tab" data-bs-toggle="tab" data-bs-target="#xml-view-tab-pane" type="button" role="tab" aria-controls="xml-view-tab-pane" aria-selected="true">XML View</button>
+        </li>
+
       </ul>
 
       <br><br>
@@ -48,7 +54,9 @@
             </div>
             <div class="mb-3">
               <label for="ubl" class="form-label">UBL</label>
-              <textarea class="form-control" name="ubl" id="ubl" rows="15"></textarea>
+              <textarea class="form-control" name="ubl" id="ubl" rows="15">
+{{ xml }}
+              </textarea>
             </div>
             <div class="mb-3"  data-bs-toggle="tooltip" data-bs-title="💡 Your API key will be cached in your browser">
               <label for="validate-api-key">API Key</label>
@@ -83,6 +91,58 @@
 
         </div>
       </div>
+
+      <div class="tab-pane fade show active" id="xml-view-tab-pane" role="tabpanel" aria-labelledby="xml-view-tab" tabindex="0">
+
+        <div class="alert alert-primary" role="alert">
+          ℹ️ Render a basic visualization of an XML document, using a (simple) Mardown template.
+        </div>
+
+        <form action="xml/view" method="POST"
+              onsubmit="cache_api_key_and_template(this)">
+
+          <ul class="nav nav-tabs" id="myTab2" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="xml-src-tab" data-bs-toggle="tab" data-bs-target="#xml-src-tab-pane" type="button" role="tab" aria-controls="xml-src-tab-pane" aria-selected="true">XML</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tpl-src-tab" data-bs-toggle="tab" data-bs-target="#tpl-src-tab-pane" type="button" role="tab" aria-controls="tpl-src-tab-pane" aria-selected="true">Markdown Template</button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="myTab2Content">
+            <div class="tab-pane fade show active" id="xml-src-tab-pane" role="tabpanel" aria-labelledby="xml-src-tab" tabindex="0">
+
+              <div class="mb-3">
+                <textarea class="form-control" name="xml" id="xml" rows="15">
+{{ xml }}
+                </textarea>
+              </div>
+
+            </div>
+
+            <div class="tab-pane fade show" id="tpl-src-tab-pane" role="tabpanel" aria-labelledby="tpl-src-tab" tabindex="0">
+
+              <div class="mb-3">
+                <textarea class="form-control" name="markdown" id="markdown" rows="15">
+{{ markdown }}
+                </textarea>
+              </div>
+
+            </div>
+          </div>
+
+          <div class="mb-3"  data-bs-toggle="tooltip" data-bs-title="💡 Your API key will be cached in your browser">
+            <label for="validate-api-key">API Key</label>
+            <input type="password" class="form-control api-key" name="api-key" id="validate-api-key">
+          </div>
+          <div class="mb-3">
+            <button type="submit" class="btn btn-primary mb-3">Visualize</button>
+          </div>
+        </form>
+
+      </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
@@ -92,8 +152,16 @@
       function cache_api_key(form) {
         localStorage.setItem("api-key", $(form).find("input:password").val());
       }
-      // load cached api key into api-key fields
+      function cache_api_key_and_template(form) {
+        cache_api_key(form);
+        localStorage.setItem("template", $(form).find("#template").val());
+      }
+      // load cached api key and template into form
       $(".api-key").val(localStorage.getItem("api-key"));
+      const template = localStorage.getItem("template");
+      if(template) {
+        $("#template").val(template);
+      }
     </script>
     <script>
       // activate tooltips

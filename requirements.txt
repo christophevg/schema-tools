@@ -9,4 +9,6 @@ fire
 flask
 dnspython
 xmltodict
+markdown
+jinja2_highlight
 
