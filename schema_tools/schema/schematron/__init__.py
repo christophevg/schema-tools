@@ -104,7 +104,7 @@ def schema_variables(xml_root, context_root, namespaces=None):
   for let in select_find(context_root, "let"):
     name  = let.get("name")
     query = let.get("value")
-    value = select_query(
+    value = select_find(
       xml_root, query, namespaces=namespaces, variables=variables
     )
     variables[name] = value
