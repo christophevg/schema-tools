@@ -298,17 +298,17 @@ Last update: 2025 May release 3.0.19.
         test="not(cbc:TaxCurrencyCode) or (cac:TaxTotal/cbc:TaxAmount[@currencyID=normalize-space(../../cbc:TaxCurrencyCode)] &lt;= 0 and cac:TaxTotal/cbc:TaxAmount[@currencyID=normalize-space(../../cbc:DocumentCurrencyCode)] &lt;= 0) or (cac:TaxTotal/cbc:TaxAmount[@currencyID=normalize-space(../../cbc:TaxCurrencyCode)] &gt;= 0 and cac:TaxTotal/cbc:TaxAmount[@currencyID=normalize-space(../../cbc:DocumentCurrencyCode)] &gt;= 0) "
         flag="fatal">Invoice total VAT amount and Invoice total VAT amount in accounting currency MUST have the same operational sign</assert>
     </rule>
-    <rule context="cbc:TaxCurrencyCode">
+    <rule context="//cbc:TaxCurrencyCode">
       <assert id="PEPPOL-EN16931-R005"
         test="not(normalize-space(text()) = normalize-space(../cbc:DocumentCurrencyCode/text()))"
         flag="fatal">VAT accounting currency code MUST be different from invoice currency code when provided.</assert>
     </rule>
     <!-- Accounting customer -->
-    <rule context="cac:AccountingCustomerParty/cac:Party">
+    <rule context="//cac:AccountingCustomerParty/cac:Party">
       <assert id="PEPPOL-EN16931-R010" test="cbc:EndpointID" flag="fatal">Buyer electronic address MUST be provided</assert>
     </rule>
     <!-- Accounting supplier -->
-    <rule context="cac:AccountingSupplierParty/cac:Party">
+    <rule context="//cac:AccountingSupplierParty/cac:Party">
       <assert id="PEPPOL-EN16931-R020" test="cbc:EndpointID" flag="fatal">Seller electronic address MUST be provided</assert>
     </rule>
     <!-- Allowance/Charge (document level/line level) -->
@@ -335,7 +335,7 @@ Last update: 2025 May release 3.0.19.
     </rule>
     <!-- Payment -->
     <rule
-      context="cac:PaymentMeans[some $code in tokenize('49 59', '\s') satisfies normalize-space(cbc:PaymentMeansCode) = $code]">
+      context="//cac:PaymentMeans[some $code in tokenize('49 59', '\s') satisfies normalize-space(cbc:PaymentMeansCode) = $code]">
       <assert id="PEPPOL-EN16931-R061" test="cac:PaymentMandate/cbc:ID" flag="fatal">Mandate reference MUST be provided for direct debit.</assert>
     </rule>
     <!-- Currency -->
@@ -355,7 +355,7 @@ Last update: 2025 May release 3.0.19.
         test="xs:date(text()) &lt;= xs:date(../../../cac:InvoicePeriod/cbc:EndDate)" flag="fatal">End date of line period MUST be within invoice period.</assert>
     </rule>
     <!-- Line level - line extension amount -->
-    <rule context="cac:InvoiceLine | cac:CreditNoteLine">
+    <rule context="//cac:InvoiceLine | //cac:CreditNoteLine">
       <let name="lineExtensionAmount"
         value="
           if (cbc:LineExtensionAmount) then
@@ -410,7 +410,7 @@ Last update: 2025 May release 3.0.19.
         flag="fatal">Element Document reference can only be used for Invoice line object</assert>
     </rule>
     <!-- Allowance (price level) -->
-    <rule context="cac:Price/cac:AllowanceCharge">
+    <rule context="//cac:Price/cac:AllowanceCharge">
       <assert id="PEPPOL-EN16931-R044" test="normalize-space(cbc:ChargeIndicator) = 'false'"
         flag="fatal">Charge on price level is NOT allowed. Only value 'false' allowed.</assert>
       <assert id="PEPPOL-EN16931-R046"
@@ -418,7 +418,7 @@ Last update: 2025 May release 3.0.19.
         flag="fatal">Item net price MUST equal (Gross price - Allowance amount) when gross price is provided.</assert>
     </rule>
     <!-- Price -->
-    <rule context="cac:Price/cbc:BaseQuantity[@unitCode]">
+    <rule context="//cac:Price/cbc:BaseQuantity[@unitCode]">
       <let name="hasQuantity" value="../../cbc:InvoicedQuantity or ../../cbc:CreditedQuantity" />
       <let name="quantity"
         value="
@@ -469,18 +469,18 @@ Last update: 2025 May release 3.0.19.
       context="//cbc:EndpointID[@schemeID = '0211'] | //cac:PartyIdentification/cbc:ID[@schemeID = '0211'] | //cbc:CompanyID[@schemeID = '0211']">
       <assert id="PEPPOL-COMMON-R047" test="fn:checkPIVAseIT(normalize-space())" flag="warning">Italian VAT Code (Partita Iva) must be stated in the correct format</assert>
     </rule>
-    <!--    <rule context="cbc:EndpointID[@schemeID = '9906']">
+    <!--    <rule context="//cbc:EndpointID[@schemeID = '9906']">
       <assert id="PEPPOL-COMMON-R048" test="fn:checkPIVAseIT(normalize-space())" flag="warning">Italian
     VAT Code (Partita Iva) must be stated in the correct format</assert>
     </rule> -->
     <rule
-      context="cbc:EndpointID[@schemeID = '0007'] | cac:PartyIdentification/cbc:ID[@schemeID = '0007'] | cbc:CompanyID[@schemeID = '0007']">
+      context="//cbc:EndpointID[@schemeID = '0007'] | //cac:PartyIdentification/cbc:ID[@schemeID = '0007'] | //cbc:CompanyID[@schemeID = '0007']">
       <assert id="PEPPOL-COMMON-R049"
         test="string-length(normalize-space()) = 10 and string(number(normalize-space())) != 'NaN' and fn:checkSEOrgnr(normalize-space())"
         flag="fatal">Swedish organization number MUST be stated in the correct format.</assert>
     </rule>
     <rule
-      context="cbc:EndpointID[@schemeID = '0151'] | cac:PartyIdentification/cbc:ID[@schemeID = '0151'] | cbc:CompanyID[@schemeID = '0151']">
+      context="//cbc:EndpointID[@schemeID = '0151'] | //cac:PartyIdentification/cbc:ID[@schemeID = '0151'] | //cbc:CompanyID[@schemeID = '0151']">
       <assert id="PEPPOL-COMMON-R050"
         test="matches(normalize-space(), '^[0-9]{11}$') and fn:abn(normalize-space())" flag="fatal">Australian Business Number (ABN) MUST be stated in the correct format.</assert>
     </rule>
@@ -488,7 +488,7 @@ Last update: 2025 May release 3.0.19.
   <!-- National rules -->
   <pattern>
     <!-- NORWAY -->
-    <rule context="cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'NO']">
+    <rule context="//cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'NO']">
       <assert id="NO-R-002"
         test="normalize-space(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'TAX']/cbc:CompanyID) = 'Foretaksregisteret'"
         flag="warning">For Norwegian suppliers, most invoice issuers are required to append "Foretaksregisteret" to their invoice. "Dersom selger er aksjeselskap, allmennaksjeselskap eller filial av utenlandsk selskap skal også ordet «Foretaksregisteret» fremgå av salgsdokumentet, jf. foretaksregisterloven § 10-2."</assert>
@@ -593,7 +593,7 @@ Last update: 2025 May release 3.0.19.
         flag="warning">If ItemClassification is provided from Danish suppliers, UNSPSC version 19.05.01 or 26.08.01 should be used.</assert>
     </rule>
     <!-- Mix level -->
-    <rule context="cac:AllowanceCharge[$DKSupplierCountry = 'DK' and $DKCustomerCountry = 'DK']">
+    <rule context="//cac:AllowanceCharge[$DKSupplierCountry = 'DK' and $DKCustomerCountry = 'DK']">
       <assert id="DK-R-004"
         test="not((cbc:AllowanceChargeReasonCode = 'ZZZ')
 						and not(((string-length(normalize-space(cbc:AllowanceChargeReason/text())) = 4)
@@ -610,11 +610,11 @@ Last update: 2025 May release 3.0.19.
   <!-- ITALY -->
   <pattern>
     <rule
-      context="cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'IT']/cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) != 'VAT']">
+      context="//cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'IT']/cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) != 'VAT']">
       <assert id="IT-R-001" test="matches(normalize-space(cbc:CompanyID),'^[A-Z0-9]{11,16}$')"
         flag="fatal">[IT-R-001] BT-32 (Seller tax registration identifier) - For Italian suppliers BT-32 minimum length 11 and maximum length shall be 16. Per i fornitori italiani il BT-32 deve avere una lunghezza tra 11 e 16 caratteri</assert>
     </rule>
-    <rule context="cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'IT']">
+    <rule context="//cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'IT']">
       <assert id="IT-R-002" test="cac:PostalAddress/cbc:StreetName" flag="fatal">[IT-R-002] BT-35 (Seller address line 1) - Italian suppliers MUST provide the postal address line 1 - I fornitori italiani devono indicare l'indirizzo postale.</assert>
       <assert id="IT-R-003" test="cac:PostalAddress/cbc:CityName" flag="fatal">[IT-R-003] BT-37 (Seller city) - Italian suppliers MUST provide the postal address city - I fornitori italiani devono indicare la città di residenza.</assert>
       <assert id="IT-R-004" test="cac:PostalAddress/cbc:PostalZone" flag="fatal">">[IT-R-004] BT-38 (Seller post code) - Italian suppliers MUST provide the postal address post code - I fornitori italiani devono indicare il CAP di residenza.</assert>
@@ -720,7 +720,7 @@ Last update: 2025 May release 3.0.19.
       <assert id="GR-R-001-6" test="string-length($IdSegments[5]) > 0 " flag="fatal">When Supplier is Greek, the Invoice Id fifth segment must not be empty</assert>
       <assert id="GR-R-001-7" test="string-length($IdSegments[6]) > 0 " flag="fatal">When Supplier is Greek, the Invoice Id sixth segment must not be empty</assert>
     </rule>
-    <rule context="cac:AccountingSupplierParty[$isGreekSender]/cac:Party">
+    <rule context="//cac:AccountingSupplierParty[$isGreekSender]/cac:Party">
       <!-- Supplier Name Mandatory -->
       <assert id="GR-R-002" test="string-length(./cac:PartyName/cbc:Name)>0" flag="fatal">Greek Suppliers must provide their full name as they are registered in the Greek Business Registry (G.E.MH.) as a legal entity or in the Tax Registry as a natural person </assert>
       <!-- Supplier VAT Mandatory -->
@@ -732,7 +732,7 @@ Last update: 2025 May release 3.0.19.
     </rule>
     <!-- VAT Number Rules -->
     <rule
-      context="cac:AccountingSupplierParty[$isGreekSender]/cac:Party/cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID">
+      context="//cac:AccountingSupplierParty[$isGreekSender]/cac:Party/cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID">
       <assert id="GR-R-003" test="substring(.,1,2) = 'EL' and fn:TinVerification(substring(.,3))"
         flag="fatal">For the Greek Suppliers, the VAT must start with 'EL' and must be a valid TIN number</assert>
     </rule>
@@ -751,31 +751,31 @@ Last update: 2025 May release 3.0.19.
     </rule>
     <!-- MARK Rules -->
     <rule
-      context="cac:AdditionalDocumentReference[$isGreekSender and ( /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'GR') and cbc:DocumentDescription = '##M.AR.K##']/cbc:ID">
+      context="//cac:AdditionalDocumentReference[$isGreekSender and ( /*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode = 'GR') and cbc:DocumentDescription = '##M.AR.K##']/cbc:ID">
       <assert id="GR-R-004-2" test="matches(.,'^[1-9]([0-9]*)')" flag="fatal">When Supplier is Greek, the MARK Number must be a positive integer</assert>
     </rule>
 
     <!-- Invoice Verification URL Rules -->
     <rule
-      context="cac:AdditionalDocumentReference[$isGreekSender and cbc:DocumentDescription = '##INVOICE|URL##']">
+      context="//cac:AdditionalDocumentReference[$isGreekSender and cbc:DocumentDescription = '##INVOICE|URL##']">
       <assert id="GR-R-008-3"
         test="string-length(normalize-space(cac:Attachment/cac:ExternalReference/cbc:URI))>0"
         flag="fatal">When Supplier is Greek and the INVOICE URL Document reference exists, the External Reference URI should be present</assert>
     </rule>
     <!-- Customer Name Mandatory -->
-    <rule context="cac:AccountingCustomerParty[$isGreekSender]/cac:Party">
+    <rule context="//cac:AccountingCustomerParty[$isGreekSender]/cac:Party">
       <assert id="GR-R-005" test="string-length(./cac:PartyName/cbc:Name)>0" flag="fatal">Greek Suppliers must provide the full name of the buyer</assert>
     </rule>
     <!-- Endpoint Rules -->
     <rule
-      context="cac:AccountingSupplierParty/cac:Party[$accountingSupplierCountry='GR' or $accountingSupplierCountry='EL']/cbc:EndpointID">
+      context="//cac:AccountingSupplierParty/cac:Party[$accountingSupplierCountry='GR' or $accountingSupplierCountry='EL']/cbc:EndpointID">
       <assert id="GR-R-009" test="./@schemeID='9933' and fn:TinVerification(.)" flag="fatal">Greek suppliers that send an invoice through the PEPPOL network must use a correct TIN number as an electronic address according to PEPPOL Electronic Address Identifier scheme (schemeID 9933).</assert>
     </rule>
   </pattern>
   <!-- Greek Sender and Greek Receiver rules -->
   <pattern>
     <!-- VAT Number Rules -->
-    <rule context="cac:AccountingCustomerParty[$isGreekSenderandReceiver]/cac:Party">
+    <rule context="//cac:AccountingCustomerParty[$isGreekSenderandReceiver]/cac:Party">
       <assert id="GR-R-006"
         test="count(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID)=1 and
 				                        substring(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID,1,2) = 'EL' and
@@ -783,7 +783,7 @@ Last update: 2025 May release 3.0.19.
         flag="fatal">Greek Suppliers must provide the VAT number of the buyer, if the buyer is Greek </assert>
     </rule>
     <!-- Endpoint Rules -->
-    <rule context="cac:AccountingCustomerParty[$isGreekSenderandReceiver]/cac:Party/cbc:EndpointID">
+    <rule context="//cac:AccountingCustomerParty[$isGreekSenderandReceiver]/cac:Party/cbc:EndpointID">
       <assert id="GR-R-010" test="./@schemeID='9933' and fn:TinVerification(.)" flag="fatal">Greek Suppliers that send an invoice through the PEPPOL network to a greek buyer must use a correct TIN number as an electronic address according to PEPPOL Electronic Address Identifier scheme (SchemeID 9933)</assert>
     </rule>
   </pattern>
@@ -842,7 +842,7 @@ Last update: 2025 May release 3.0.19.
       value="(upper-case(normalize-space(/*/cac:AccountingCustomerParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')" />
     <let name="taxRepresentativeCountryIsNL"
       value="(upper-case(normalize-space(/*/cac:TaxRepresentativeParty/cac:PostalAddress/cac:Country/cbc:IdentificationCode)) = 'NL')" />
-    <rule context="cbc:CreditNoteTypeCode[$supplierCountryIsNL]">
+    <rule context="//cbc:CreditNoteTypeCode[$supplierCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-9
        This rule has changed: since 384 is not an allowed invoice type code in PEPPOL BIS,
        this rule now only applies to credit notes
@@ -850,41 +850,41 @@ Last update: 2025 May release 3.0.19.
       <assert id="NL-R-001" test="/*/cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID"
         flag="fatal">[NL-R-001] For suppliers in the Netherlands, if the document is a creditnote, the document MUST contain an invoice reference (cac:BillingReference/cac:InvoiceDocumentReference/cbc:ID)</assert>
     </rule>
-    <rule context="cac:AccountingSupplierParty/cac:Party/cac:PostalAddress[$supplierCountryIsNL]">
+    <rule context="//cac:AccountingSupplierParty/cac:Party/cac:PostalAddress[$supplierCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-3 -->
       <assert id="NL-R-002" test="cbc:StreetName and cbc:CityName and cbc:PostalZone" flag="fatal">[NL-R-002] For suppliers in the Netherlands the supplier's address (cac:AccountingSupplierParty/cac:Party/cac:PostalAddress) MUST contain street name (cbc:StreetName), city (cbc:CityName) and post code (cbc:PostalZone)</assert>
     </rule>
     <rule
-      context="cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID[$supplierCountryIsNL]">
+      context="//cac:AccountingSupplierParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID[$supplierCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-1 -->
       <assert id="NL-R-003"
         test="(contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(.) != '')"
         flag="fatal">[NL-R-003] For suppliers in the Netherlands, the legal entity identifier MUST be either a KVK or OIN number (schemeID 0106 or 0190)</assert>
     </rule>
     <rule
-      context="cac:AccountingCustomerParty/cac:Party/cac:PostalAddress[$supplierCountryIsNL and $customerCountryIsNL]">
+      context="//cac:AccountingCustomerParty/cac:Party/cac:PostalAddress[$supplierCountryIsNL and $customerCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-4 -->
       <assert id="NL-R-004" test="cbc:StreetName and cbc:CityName and cbc:PostalZone" flag="fatal">[NL-R-004] For suppliers in the Netherlands, if the customer is in the Netherlands, the customer address (cac:AccountingCustomerParty/cac:Party/cac:PostalAddress) MUST contain the street name (cbc:StreetName), the city (cbc:CityName) and post code (cbc:PostalZone)</assert>
     </rule>
     <rule
-      context="cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID[$supplierCountryIsNL and $customerCountryIsNL]">
+      context="//cac:AccountingCustomerParty/cac:Party/cac:PartyLegalEntity/cbc:CompanyID[$supplierCountryIsNL and $customerCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-10 -->
       <assert id="NL-R-005"
         test="(contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0106 ') or contains(concat(' ', string-join(@schemeID, ' '), ' '), ' 0190 ')) and (normalize-space(.) != '')"
         flag="fatal">[NL-R-005] For suppliers in the Netherlands, if the customer is in the Netherlands, the customer's legal entity identifier MUST be either a KVK or OIN number (schemeID 0106 or 0190)</assert>
     </rule>
     <rule
-      context="cac:TaxRepresentativeParty/cac:PostalAddress[$supplierCountryIsNL and $taxRepresentativeCountryIsNL]">
+      context="//cac:TaxRepresentativeParty/cac:PostalAddress[$supplierCountryIsNL and $taxRepresentativeCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-5 -->
       <assert id="NL-R-006" test="cbc:StreetName and cbc:CityName and cbc:PostalZone" flag="fatal">[NL-R-006] For suppliers in the Netherlands, if the fiscal representative is in the Netherlands, the representative's address (cac:TaxRepresentativeParty/cac:PostalAddress) MUST contain street name (cbc:StreetName), city (cbc:CityName) and post code (cbc:PostalZone)</assert>
     </rule>
-    <rule context="cac:LegalMonetaryTotal[$supplierCountryIsNL]">
+    <rule context="//cac:LegalMonetaryTotal[$supplierCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-11 -->
       <assert id="NL-R-007"
         test="(/ubl-invoice:Invoice and xs:decimal(cbc:PayableAmount) &lt;= 0.0) or (/ubl-creditnote:CreditNote and xs:decimal(cbc:PayableAmount) &gt;= 0.0) or (//cac:PaymentMeans)"
         flag="fatal">[NL-R-007] For suppliers in the Netherlands, the supplier MUST provide a means of payment (cac:PaymentMeans) if the payment is from customer to supplier</assert>
     </rule>
-    <rule context="cac:PaymentMeans[$supplierCountryIsNL and $customerCountryIsNL]">
+    <rule context="//cac:PaymentMeans[$supplierCountryIsNL and $customerCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-12 -->
       <assert id="NL-R-008"
         test="normalize-space(cbc:PaymentMeansCode) = '30' or
@@ -895,7 +895,7 @@ Last update: 2025 May release 3.0.19.
         normalize-space(cbc:PaymentMeansCode) = '59'"
         flag="fatal">[NL-R-008] For suppliers in the Netherlands, if the customer is in the Netherlands, the payment means code (cac:PaymentMeans/cbc:PaymentMeansCode) MUST be one of 30, 48, 49, 57, 58 or 59</assert>
     </rule>
-    <rule context="cac:OrderLineReference/cbc:LineID[$supplierCountryIsNL]">
+    <rule context="//cac:OrderLineReference/cbc:LineID[$supplierCountryIsNL]">
       <!-- Original rule in NLCIUS: BR-NL-13 -->
       <assert id="NL-R-009" test="exists(/*/cac:OrderReference/cbc:ID)" flag="fatal">[NL-R-009] For suppliers in the Netherlands, if an order line reference (cac:OrderLineReference/cbc:LineID) is used, there must be an order reference on the document level (cac:OrderReference/cbc:ID)</assert>
     </rule>
@@ -924,7 +924,7 @@ Last update: 2025 May release 3.0.19.
       <let name="BT-102"
         value="cac:AllowanceCharge/cac:TaxCategory/cbc:ID[ancestor::cac:AllowanceCharge/cbc:ChargeIndicator = 'true']" />
       <let name="BT-151"
-        value="(cac:InvoiceLine | cac:CreditNoteLine)/cac:Item/cac:ClassifiedTaxCategory/cbc:ID" />
+        value="(cac:InvoiceLine | //cac:CreditNoteLine)/cac:Item/cac:ClassifiedTaxCategory/cbc:ID" />
       <!-- If one of BT-95, BT-102, BT-151 is in List of supportedVATCodes then either
       BG-11=cac:TaxRepresentativeParty or $BT-31orBT-32Path has to exist -->
       <assert
@@ -950,7 +950,7 @@ Last update: 2025 May release 3.0.19.
         flag="warning"
         id="DE-R-026">If "Invoice type code" (BT-3) contains the code 384 (Corrected invoice), "PRECEDING INVOICE REFERENCE" (BG-3) should be provided at least once.</assert>
       <assert
-        test="not(cac:PaymentMeans/cac:PaymentMandate)                        or (cac:AccountingSupplierParty/cac:Party/cac:PartyIdentification/cbc:ID[@schemeID='SEPA']                          | cac:PayeeParty/cac:PartyIdentification/cbc:ID[@schemeID='SEPA'])"
+        test="not(cac:PaymentMeans/cac:PaymentMandate)                        or (cac:AccountingSupplierParty/cac:Party/cac:PartyIdentification/cbc:ID[@schemeID='SEPA']                          | //cac:PayeeParty/cac:PartyIdentification/cbc:ID[@schemeID='SEPA'])"
         flag="fatal"
         id="DE-R-030">If the group "DIRECT DEBIT" (BG-19) is delivered, the element "Bank assigned creditor identifier" (BT-90) shall be provided.</assert>
       <assert
@@ -1055,28 +1055,28 @@ Last update: 2025 May release 3.0.19.
     <let name="UNCL7161" value="tokenize('AA AAA AAC AAD AAE AAF AAH AAI AAS AAT AAV AAY AAZ ABA ABB ABC ABD ABF ABK ABL ABN ABR ABS ABT ABU ACF ACG ACH ACI ACJ ACK ACL ACM ACS ADC ADE ADJ ADK ADL ADM ADN ADO ADP ADQ ADR ADT ADW ADY ADZ AEA AEB AEC AED AEF AEH AEI AEJ AEK AEL AEM AEN AEO AEP AES AET AEU AEV AEW AEX AEY AEZ AJ AU CA CAB CAD CAE CAF CAI CAJ CAK CAL CAM CAN CAO CAP CAQ CAR CAS CAT CAU CAV CAW CAX CAY CAZ CD CG CS CT DAB DAC DAD DAF DAG DAH DAI DAJ DAK DAL DAM DAN DAO DAP DAQ DL EG EP ER FAA FAB FAC FC FH FI GAA HAA HD HH IAA IAB ID IF IR IS KO L1 LA LAA LAB LF MAE MI ML NAA OA PA PAA PC PL PRV RAB RAC RAD RAF RE RF RH RV SA SAA SAD SAE SAI SG SH SM SU TAB TAC TT TV V1 V2 WH XAA YY ZZZ', '\s')" />
     <let name="UNCL5305" value="tokenize('AE E S Z G O K L M B', '\s')"/>
     <let name="eaid" value="tokenize('0002 0007 0009 0037 0060 0088 0096 0097 0106 0130 0135 0142 0151 0177 0183 0184 0188 0190 0191 0192 0193 0195 0196 0198 0199 0200 0201 0202 0204 0208 0209 0210 0211 0212 0213 0215 0216 0218 0221 0230 0235 9910 9913 9914 9915 9918 9919 9920 9922 9923 9924 9925 9926 9927 9928 9929 9930 9931 9932 9933 9934 9935 9936 9937 9938 9939 9940 9941 9942 9943 9944 9945 9946 9947 9948 9949 9950 9951 9952 9953 9957 9959 0147 0154 0158 0170 0194 0203 0205 0217 0225 0240', '\s')"/>
-    <rule context="cbc:EmbeddedDocumentBinaryObject[@mimeCode]">
+    <rule context="//cbc:EmbeddedDocumentBinaryObject[@mimeCode]">
       <assert id="PEPPOL-EN16931-CL001"
         test="
           some $code in $MIMECODE
             satisfies @mimeCode = $code"
         flag="fatal">Mime code must be according to subset of IANA code list.</assert>
     </rule>
-    <rule context="cac:AllowanceCharge[cbc:ChargeIndicator = 'false']/cbc:AllowanceChargeReasonCode">
+    <rule context="//cac:AllowanceCharge[cbc:ChargeIndicator = 'false']/cbc:AllowanceChargeReasonCode">
       <assert id="PEPPOL-EN16931-CL002"
         test="
           some $code in $UNCL5189
             satisfies normalize-space(text()) = $code"
         flag="fatal">Reason code MUST be according to subset of UNCL 5189 D.16B.</assert>
     </rule>
-    <rule context="cac:AllowanceCharge[cbc:ChargeIndicator = 'true']/cbc:AllowanceChargeReasonCode">
+    <rule context="//cac:AllowanceCharge[cbc:ChargeIndicator = 'true']/cbc:AllowanceChargeReasonCode">
       <assert id="PEPPOL-EN16931-CL003"
         test="
           some $code in $UNCL7161
             satisfies normalize-space(text()) = $code"
         flag="fatal">Reason code MUST be according to UNCL 7161 D.16B.</assert>
     </rule>
-    <rule context="cac:InvoicePeriod/cbc:DescriptionCode">
+    <rule context="//cac:InvoicePeriod/cbc:DescriptionCode">
       <assert id="PEPPOL-EN16931-CL006"
         test="
           some $code in $UNCL2005
@@ -1084,14 +1084,14 @@ Last update: 2025 May release 3.0.19.
         flag="fatal">Invoice period description code must be according to UNCL 2005 D.16B.</assert>
     </rule>
     <rule
-      context="cbc:Amount | cbc:BaseAmount | cbc:PriceAmount | cbc:TaxAmount | cbc:TaxableAmount | cbc:LineExtensionAmount | cbc:TaxExclusiveAmount | cbc:TaxInclusiveAmount | cbc:AllowanceTotalAmount | cbc:ChargeTotalAmount | cbc:PrepaidAmount | cbc:PayableRoundingAmount | cbc:PayableAmount">
+      context="//cbc:Amount | //cbc:BaseAmount | //cbc:PriceAmount | //cbc:TaxAmount | //cbc:TaxableAmount | //cbc:LineExtensionAmount | //cbc:TaxExclusiveAmount | //cbc:TaxInclusiveAmount | //cbc:AllowanceTotalAmount | //cbc:ChargeTotalAmount | //cbc:PrepaidAmount | //cbc:PayableRoundingAmount | //cbc:PayableAmount">
       <assert id="PEPPOL-EN16931-CL007"
         test="
           some $code in $ISO4217
             satisfies @currencyID = $code"
         flag="fatal">Currency code must be according to ISO 4217:2005</assert>
     </rule>
-    <rule context="cbc:InvoiceTypeCode">
+    <rule context="//cbc:InvoiceTypeCode">
       <assert id="PEPPOL-EN16931-P0100"
         test="
           $profile != '01' or (some $code in tokenize('71 80 82 84 102 218 219 326 331 380 382 383 384 386 388 393 395 553 575 623 780 817 870 875 876 877', '\s')
@@ -1102,7 +1102,7 @@ Last update: 2025 May release 3.0.19.
         flag="fatal">Invoice type code 326 or 384 are only allowed when both buyer and seller are German organizations </assert>
     </rule>
 
-    <rule context="cbc:CreditNoteTypeCode">
+    <rule context="//cbc:CreditNoteTypeCode">
       <assert id="PEPPOL-EN16931-P0101"
         test="
           $profile != '01' or (some $code in tokenize('381 396 81 83 532', '\s')
@@ -1110,38 +1110,38 @@ Last update: 2025 May release 3.0.19.
         flag="fatal">Credit note type code MUST be set according to the profile.</assert>
     </rule>
     <rule
-      context="cbc:IssueDate | cbc:DueDate | cbc:TaxPointDate | cbc:StartDate | cbc:EndDate | cbc:ActualDeliveryDate">
+      context="//cbc:IssueDate | //cbc:DueDate | //cbc:TaxPointDate | //cbc:StartDate | //cbc:EndDate | //cbc:ActualDeliveryDate">
       <assert id="PEPPOL-EN16931-F001"
         test="string-length(text()) = 10 and (string(.) castable as xs:date)" flag="fatal">A date MUST be formatted YYYY-MM-DD.</assert>
     </rule>
-    <rule context="cbc:EndpointID[@schemeID]">
+    <rule context="//cbc:EndpointID[@schemeID]">
       <assert id="PEPPOL-EN16931-CL008"
         test="
         some $code in $eaid
         satisfies @schemeID = $code" flag="fatal">Electronic address identifier scheme must be from the codelist "Electronic Address Identifier Scheme"</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-G']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-G']">
       <assert id="PEPPOL-EN16931-P0104" test="normalize-space(cbc:ID)='G'" flag="fatal">Tax Category G MUST be used when exemption reason code is VATEX-EU-G</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-O']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-O']">
       <assert id="PEPPOL-EN16931-P0105" test="normalize-space(cbc:ID)='O'" flag="fatal">Tax Category O MUST be used when exemption reason code is VATEX-EU-O</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-IC']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-IC']">
       <assert id="PEPPOL-EN16931-P0106" test="normalize-space(cbc:ID)='K'" flag="fatal">Tax Category K MUST be used when exemption reason code is VATEX-EU-IC</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-AE']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-AE']">
       <assert id="PEPPOL-EN16931-P0107" test="normalize-space(cbc:ID)='AE'" flag="fatal">Tax Category AE MUST be used when exemption reason code is VATEX-EU-AE</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-D']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-D']">
       <assert id="PEPPOL-EN16931-P0108" test="normalize-space(cbc:ID)='E'" flag="fatal">Tax Category E MUST be used when exemption reason code is VATEX-EU-D</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-F']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-F']">
       <assert id="PEPPOL-EN16931-P0109" test="normalize-space(cbc:ID)='E'" flag="fatal">Tax Category E MUST be used when exemption reason code is VATEX-EU-F</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-I']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-I']">
       <assert id="PEPPOL-EN16931-P0110" test="normalize-space(cbc:ID)='E'" flag="fatal">Tax Category E MUST be used when exemption reason code is VATEX-EU-I</assert>
     </rule>
-    <rule context="cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-J']">
+    <rule context="//cac:TaxCategory[upper-case(cbc:TaxExemptionReasonCode)='VATEX-EU-J']">
       <assert id="PEPPOL-EN16931-P0111" test="normalize-space(cbc:ID)='E'" flag="fatal">Tax Category E MUST be used when exemption reason code is VATEX-EU-J</assert>
     </rule>
   </pattern>
