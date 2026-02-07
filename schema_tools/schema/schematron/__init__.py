@@ -126,7 +126,8 @@ def validate_schematron(xml_root, schematron_filename) -> int:
   logger.debug("with variables:")
   logger.debug(json.dumps(variables, indent=2, default=str))
 
-  errors = 0
+  errors   = 0
+  warnings = 0
   # for every pattern in the schematron
   for pattern in select_find(schematron_root, "pattern"):
     pattern_variables = schema_variables(xml_root, pattern, namespaces)
@@ -146,10 +147,10 @@ def validate_schematron(xml_root, schematron_filename) -> int:
         variables=variables | pattern_variables | rule_variables
       )
       for context in contexts:
-
         # perform every assertion in the schematron/pattern/rule given context
         for assertion in select_find(rule, "assert"):
           assertion_query = assertion.get("test")
+          fatal           = assertion.get("flag") == "fatal"
           logger.debug(assertion_query)
           logger.debug(json.dumps(
             variables | pattern_variables | rule_variables,
@@ -162,13 +163,23 @@ def validate_schematron(xml_root, schematron_filename) -> int:
             variables=variables | pattern_variables | rule_variables
           )
           if not result:
-            errors += 1
-            logger.error(f"""[red]{assertion.text}[/red]
-[blue]context[/blue]: {context_query}
-[blue]query[/blue]  : {assertion_query}""",
-              extra={"markup": True}
-            )
-  logger.debug(f"SCHEMATRON ERRORS={errors}")
+            if fatal:
+              errors += 1
+              logger_func = logger.error
+              color = "red"
+            else:
+              warnings += 1
+              logger_func = logger.warning
+              color = "yellow"
+            logger_func(f"""[{color}]{assertion.text}[/{color}]
+  [blue]context[/blue]: {context_query}
+  [blue]query[/blue]  : {assertion_query}""",
+                extra={"markup": True}
+              )
+  if errors:
+    logger.debug(f"schematron errors={errors}")
+  if warnings:
+    logger.debug(f"schematron warnings={warnings}")
   return errors
 
 def validate(xml_root, schematrons):
