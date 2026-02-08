@@ -11,7 +11,7 @@ from schema_tools        import peppol
 from schema_tools.schema import ubl
 
 import xmltodict
-from jinja2 import Environment, BaseLoader, Undefined
+from jinja2 import BaseLoader, Undefined
 from jinja2.sandbox import SandboxedEnvironment
 
 from markdown import markdown
