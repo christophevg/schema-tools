@@ -1,53 +1,125 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Schema Tools web app</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div class="container">
+      <div class="container-fluid">
         <a class="navbar-brand" href="#">Schema Tools</a>
+        <span>
+        <i class="bi bi-info-circle"
+           style="font-size: 1.5rem; color: lightgrey; cursor: pointer; padding-right:10px;"
+           onclick="show_info()""></i>
+        <i class="bi bi-lock"
+           style="font-size: 1.5rem; color: lightgrey; cursor: pointer;"
+           onclick="show_api_key_form()""></i>
+        </span>
       </div>
     </nav>
 
     <div class="container my-5">
-
       <ul class="nav nav-pills" id="myTab" role="tablist">
-
         <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="peppol-ubl-validation-tab" data-bs-toggle="tab" data-bs-target="#peppol-ubl-validation-tab-pane" type="button" role="tab" aria-controls="peppol-ubl-validation-tab-pane" aria-selected="true">Peppol UBL Validation</button>
+          <button
+            class="nav-link active"
+            id="peppol-ubl-validation-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#peppol-ubl-validation-tab-pane"
+            type="button"
+            role="tab"
+            aria-controls="peppol-ubl-validation-tab-pane"
+            aria-selected="true"
+          >
+            Peppol UBL Validation
+          </button>
         </li>
         <li class="nav-item" role="presentation">
-          <button class="nav-link" id="peppol-participant-check-tab" data-bs-toggle="tab" data-bs-target="#peppol-participant-check-tab-pane" type="button" role="tab" aria-controls="peppol-participant-check-tab-pane" aria-selected="false">Peppol Participant Check</button>
+          <button
+            class="nav-link"
+            id="peppol-participant-check-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#peppol-participant-check-tab-pane"
+            type="button"
+            role="tab"
+            aria-controls="peppol-participant-check-tab-pane"
+            aria-selected="false"
+          >
+            Peppol Participant Check
+          </button>
         </li>
 
         <li class="nav-item" role="presentation">
-          <button class="nav-link" id="xml-view-tab" data-bs-toggle="tab" data-bs-target="#xml-view-tab-pane" type="button" role="tab" aria-controls="xml-view-tab-pane" aria-selected="true">XML View</button>
+          <button
+            class="nav-link"
+            id="xml-view-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#xml-view-tab-pane"
+            type="button"
+            role="tab"
+            aria-controls="xml-view-tab-pane"
+            aria-selected="true"
+          >
+            XML View
+          </button>
         </li>
-
       </ul>
 
-      <br><br>
+      <br /><br />
 
       <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="peppol-ubl-validation-tab-pane" role="tabpanel" aria-labelledby="peppol-ubl-validation-tab" tabindex="0">
-
-          <div class="alert alert-primary" role="alert">
-            ℹ️ Check an UBL document against:
-            <ul>
-              <li>the corresponding UBL document type's XML Schema (version 2.1)</li>
-              <li>two Schematron-based semantics rule sets: <a href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch">CEN-EN16931-UBL.sch</a> and <a href="https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch">PEPPOL-EN16931-UBL.sch</a></li>
-            </ul>
+        <div
+          class="tab-pane fade show active"
+          id="peppol-ubl-validation-tab-pane"
+          role="tabpanel"
+          aria-labelledby="peppol-ubl-validation-tab"
+          tabindex="0"
+        >
+          <div class="alert alert-primary d-flex align-items-center" role="alert">
+            <i class="bi bi-info-circle-fill flex-shrink-0 me-2""></i>
+            <div>
+              Check an UBL document against:
+              <ul>
+                <li>
+                  the corresponding UBL document type's XML Schema (version 2.1)
+                </li>
+                <li>
+                  two Schematron-based semantics rule sets:
+                  <a
+                    href="https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch"
+                    >CEN-EN16931-UBL.sch</a
+                  >
+                  and
+                  <a
+                    href="https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch"
+                    >PEPPOL-EN16931-UBL.sch</a
+                  >
+                </li>
+              </ul>
+            </div>
           </div>
 
-          <form action="peppol/validate" method="POST"
-                onsubmit="cache_api_key(this)">
+          <form
+            action="peppol/validate"
+            method="POST"
+            onsubmit="cache_api_key(this)"
+          >
             <div class="mb-3">
               <label for="doctype" class="form-label">Document Type</label>
-              <select class="form-select" name="doctype" aria-label="Document Type">
+              <select
+                class="form-select"
+                name="doctype"
+                aria-label="Document Type"
+              >
                 <option selected value="Invoice">Invoice</option>
                 <option value="CreditNote">Credit Note</option>
               </select>
@@ -58,115 +130,302 @@
 {{ xml }}
               </textarea>
             </div>
-            <div class="mb-3"  data-bs-toggle="tooltip" data-bs-title="💡 Your API key will be cached in your browser">
-              <label for="validate-api-key">API Key</label>
-              <input type="password" class="form-control api-key" name="api-key" id="validate-api-key">
-            </div>
+            <input type="hidden" name="api-key"/>
             <div class="mb-3">
-              <button type="submit" class="btn btn-primary mb-3">Validate</button>
+              <button type="submit" class="btn btn-primary mb-3">
+                Validate
+              </button>
             </div>
           </form>
-
         </div>
-        <div class="tab-pane fade" id="peppol-participant-check-tab-pane" role="tabpanel" aria-labelledby="peppol-participant-check-tab" tabindex="0">
-
-          <div class="alert alert-primary" role="alert">
-            ℹ️ Look up a Peppol participant, view registered meta data.
+        <div
+          class="tab-pane fade"
+          id="peppol-participant-check-tab-pane"
+          role="tabpanel"
+          aria-labelledby="peppol-participant-check-tab"
+          tabindex="0"
+        >
+          <div class="alert alert-primary d-flex align-items-center" role="alert">
+            <i class="bi bi-info-circle-fill flex-shrink-0 me-2""></i>
+            <div>
+              Find a participant in the Peppol network and view its registered metadata.<br>
+              This lookup is done through the authoritative SML DNS-based network.
+            </div>
           </div>
 
-          <form action="peppol/check" method="POST"
-                onsubmit="cache_api_key(this)">
+          <form
+            action="peppol/check"
+            method="POST"
+            onsubmit="cache_api_key(this)"
+          >
             <div class="mb-3">
               <label for="participant" class="form-label">Participant ID</label>
-              <input type="text" class="form-control" name="participant" id="participant">
+              <input
+                type="text"
+                class="form-control"
+                name="participant"
+                id="participant"
+              />
             </div>
-            <div class="mb-3" data-bs-toggle="tooltip" data-bs-title="💡 Your API key will be cached in your browser">
-              <label for="check-api-key">API Key</label>
-              <input type="password" class="form-control api-key" name="api-key" id="check-api-key">
-            </div>
+            <input type="hidden" name="api-key"/>
             <div class="mb-3">
               <button type="submit" class="btn btn-primary mb-3">Check</button>
             </div>
           </form>
-
         </div>
       </div>
 
-      <div class="tab-pane fade show active" id="xml-view-tab-pane" role="tabpanel" aria-labelledby="xml-view-tab" tabindex="0">
-
-        <div class="alert alert-primary" role="alert">
-          ℹ️ Render a basic visualization of an XML document, using a (simple) Mardown template.
+      <div
+        class="tab-pane fade"
+        id="xml-view-tab-pane"
+        role="tabpanel"
+        aria-labelledby="xml-view-tab"
+        tabindex="0"
+      >
+        <div class="alert alert-primary d-flex align-items-center" role="alert">
+          <i class="bi bi-info-circle-fill flex-shrink-0 me-2""></i>
+          <div>
+            Create a simple visualization of an XML document using a Markdown template.<br>
+            Any changes you make to the template are saved locally in your browser’s local storage.
+          </div>
         </div>
 
-        <form action="xml/view" method="POST"
-              onsubmit="cache_api_key_and_template(this)">
-
+        <form
+          action="xml/view"
+          method="POST"
+          onsubmit="return cache_template(this)"
+        >
           <ul class="nav nav-tabs" id="myTab2" role="tablist">
             <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="xml-src-tab" data-bs-toggle="tab" data-bs-target="#xml-src-tab-pane" type="button" role="tab" aria-controls="xml-src-tab-pane" aria-selected="true">XML</button>
+              <button
+                class="nav-link active"
+                id="xml-src-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#xml-src-tab-pane"
+                type="button"
+                role="tab"
+                aria-controls="xml-src-tab-pane"
+                aria-selected="true"
+              >
+                XML
+              </button>
             </li>
             <li class="nav-item" role="presentation">
-              <button class="nav-link" id="tpl-src-tab" data-bs-toggle="tab" data-bs-target="#tpl-src-tab-pane" type="button" role="tab" aria-controls="tpl-src-tab-pane" aria-selected="true">Markdown Template</button>
+              <button
+                class="nav-link"
+                id="tpl-src-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#tpl-src-tab-pane"
+                type="button"
+                role="tab"
+                aria-controls="tpl-src-tab-pane"
+                aria-selected="true"
+              >
+                Markdown Template
+              </button>
             </li>
           </ul>
 
           <div class="tab-content" id="myTab2Content">
-            <div class="tab-pane fade show active" id="xml-src-tab-pane" role="tabpanel" aria-labelledby="xml-src-tab" tabindex="0">
-
+            <div
+              class="tab-pane fade show active"
+              id="xml-src-tab-pane"
+              role="tabpanel"
+              aria-labelledby="xml-src-tab"
+              tabindex="0"
+            >
               <div class="mb-3">
                 <textarea class="form-control" name="xml" id="xml" rows="15">
 {{ xml }}
                 </textarea>
               </div>
-
             </div>
 
-            <div class="tab-pane fade show" id="tpl-src-tab-pane" role="tabpanel" aria-labelledby="tpl-src-tab" tabindex="0">
-
+            <div
+              class="tab-pane fade show"
+              id="tpl-src-tab-pane"
+              role="tabpanel"
+              aria-labelledby="tpl-src-tab"
+              tabindex="0"
+            >
               <div class="mb-3">
-                <textarea class="form-control" name="markdown" id="markdown" rows="15">
+                <textarea
+                  class="form-control"
+                  name="markdown"
+                  id="template"
+                  rows="15"
+                >
 {{ markdown }}
                 </textarea>
               </div>
-
             </div>
           </div>
-
-          <div class="mb-3"  data-bs-toggle="tooltip" data-bs-title="💡 Your API key will be cached in your browser">
-            <label for="validate-api-key">API Key</label>
-            <input type="password" class="form-control api-key" name="api-key" id="validate-api-key">
-          </div>
+          <input type="hidden" name="api-key"/>
           <div class="mb-3">
-            <button type="submit" class="btn btn-primary mb-3">Visualize</button>
+            <button type="submit" class="btn btn-primary mb-3">
+              Visualize
+            </button>
           </div>
         </form>
-
       </div>
-
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <div class="modal fade" id="info" data-bs-keyboard="false"
+         tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 shadow">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">Schema Tools</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Schema-tools is a Python package that combines several tools to parse, query, map, and validate JSON/YAML schemas and XML documents using both schema and schematrons.
+            </p>
+
+            <p>
+              Schema-tools is available from the <a href="https://pypi.org/project/schema-tools/">Python Package Index</a>. It is hosted on <a href="https://github.com/christophevg/schema-tools">GitHub</a> and has documentation published at <a href="https://schema-tools.readthedocs.io">Read the Docs</a>.
+            </p>
+
+            <p>
+              This web app exposes some of the tools' functionality in a ready to use format.
+            </p>
+
+            <hr class="my-4">
+
+            <p>
+              <b>Disclaimer</b>: Schema-tools and this web app are provided on an “as is” basis without any guarantees of completeness, accuracy, or reliability. It may contain errors, bugs, or missing features, and its functionality is not guaranteed to meet any particular requirements.
+
+              By using this module, you acknowledge and agree that:
+
+              <ul>
+                <li>Use is at your own risk.</li>
+                <li>The authors or distributors shall not be held liable for any damage, loss, or issues arising from its use.</li>
+                <li>No warranty, express or implied, is provided, including but not limited to warranties of performance, fitness for a particular purpose, or non-infringement.</li>
+              </ul>
+
+              If you choose to use this module in your project, you do so entirely at your own discretion and responsibility.
+            </p>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="modal fade" id="api-key-form" data-bs-keyboard="false"
+         tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="staticBackdropLabel">API Key</h1>
+          </div>
+          <div class="modal-body">
+            Your browser doesn't contain an API key yet. Please provide your API
+            key and press <tt>Save</tt>.
+
+            <form class="" onsubmit="return save_api_key(this)">
+              <div class="form-floating mb-3">
+                <input type="password" class="form-control rounded-3"
+                  name="api-key" placeholder="Password"
+                  onkeyup="check_api_key(this)"/>
+                <label for="api-key">API Key</label>
+              </div>
+              <button class="w-100 mb-2 btn btn-lg rounded-3 btn-primary"
+                      type="submit">Save</button>
+              <button class="w-100 mb-2 btn btn-lg rounded-3 btn-secondary"
+                      type="button" onclick="reset_api_key(this)">Reset</button>
+              <small class="text-body-secondary">
+                Your API key will be stored in the local storage of your browser. This is <i>not</i> a cookie that is send back to the server. It will be used to authenticate your API requests.
+              </small>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
     <script>
-      // cache api-key value in local storage
-      function cache_api_key(form) {
-        localStorage.setItem("api-key", $(form).find("input:password").val());
-      }
-      function cache_api_key_and_template(form) {
-        cache_api_key(form);
+      // Markdown template support
+      function cache_template(form) {
         localStorage.setItem("template", $(form).find("#template").val());
+        return true;
       }
-      // load cached api key and template into form
-      $(".api-key").val(localStorage.getItem("api-key"));
+      // load cached template into form
       const template = localStorage.getItem("template");
-      if(template) {
-        $("#template").val(template);
+      if (template) {
+        $("#template").text(template);
       }
     </script>
     <script>
-      // activate tooltips
-      const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-      const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+      // api key support
+      const options = {
+        backdrop: "static",
+        keyboard: false,
+      };
+      const modal = new bootstrap.Modal("#api-key-form", options);
+
+      // api key form management
+
+      function show_api_key_form() {
+        modal.show();
+        check_api_key();
+      }
+
+      function check_api_key(field) {
+        if(!field) {
+          field = $("#api-key-form").find("input[name='api-key']")
+        }
+        const form = $(field).parent().parent();
+        $(form).find("button[type='submit']").prop(
+          "disabled", $(field).val().length < 1
+        );
+      }
+
+      function reset_api_key(form) {
+        // remove api key from local storage
+        localStorage.removeItem("api-key");
+        //                from input fields
+        $("input[name='api-key']").val(null);
+        check_api_key();
+      }
+
+      function save_api_key(form) {
+        const new_api_key = $(form).find("input[name='api-key']").val();
+        if(new_api_key) {
+          localStorage.setItem("api-key", new_api_key);
+          // true submits, reloading and initializing api key
+          return true;
+        }
+        return false;
+      }
+
+      // load api key from local storage and fill into hidden fields
+      // or show form to configure it
+      function init_api_key() {
+        const api_key = localStorage.getItem("api-key");
+        if(api_key) {
+          $("input[name='api-key']").val(api_key);
+        } else {
+          show_api_key_form();
+        }
+      }
+
+      init_api_key();
+
+    </script>
+    <script>
+      const info_options = {
+        backdrop: "static",
+        keyboard: true,
+      };
+      const info_modal = new bootstrap.Modal("#info", info_options);
+      function show_info() {
+        info_modal.show();
+      }
     </script>
   </body>
 </html>
