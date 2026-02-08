@@ -12,6 +12,7 @@ from schema_tools.schema import ubl
 
 import xmltodict
 from jinja2 import Environment, BaseLoader, Undefined
+from jinja2.sandbox import SandboxedEnvironment
 
 from markdown import markdown
 
@@ -123,7 +124,7 @@ def view():
   logger.debug(json.dumps(xml,indent=2))
 
   # construct template and render html
-  template = Environment(
+  template = SandboxedEnvironment(
     loader=BaseLoader(),undefined=SilentUndefined
   ).from_string(meta_template)
   html = markdown(
