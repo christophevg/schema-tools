@@ -19,6 +19,7 @@ from rich.console import Console
 # this injects custom functions in the parser
 import schema_tools.schema.schematron.functions  # noqa: F401
 from schema_tools import xml
+from schema_tools.schema.schematron.functions import set_current_context
 
 logger = logging.getLogger(__name__)
 
@@ -226,6 +227,9 @@ class Schematron:
           # perform every assertion in the schematron/pattern/rule given context
           for assertion in select_find(rule, "assert"):
             assertion_query = assertion.get("test")
+            # XSLT semantics: current() inside the test refers to the rule
+            # context node, not the dynamic context item within predicates
+            set_current_context(context)
             try:
               result_ok = select_query(
                 xml_root,
@@ -240,6 +244,8 @@ class Schematron:
                 raise
               result.unevaluated.append(Unevaluated(context_query, assertion_query, _reason(ex)))
               continue
+            finally:
+              set_current_context(None)
             if not result_ok:
               flag = assertion.get("flag")
               result.violations.append(

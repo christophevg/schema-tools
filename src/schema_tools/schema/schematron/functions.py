@@ -7,13 +7,44 @@ It’s important to note that stubs for all functions in the PEPPOL-EN16931-UBL 
 # ruff: noqa: F841
 
 import logging
+import threading
 
 from elementpath.xpath3 import XPath3Parser
+from elementpath.xpath_nodes import EtreeElementNode
 
 logger = logging.getLogger(__name__)
 
 method = XPath3Parser.method
 function = XPath3Parser.function
+
+# the node `current()` refers to: bound by Schematron.validate() around each
+# assert evaluation (XSLT semantics — current() is the rule context node,
+# NOT the dynamic context item, which changes inside predicates)
+_current = threading.local()
+
+
+def set_current_context(node):
+  """bind the node `current()` returns (thread-local, cleared after use)"""
+  _current.node = node
+
+
+@method(function("current", nargs=0, sequence_types=("node()",)))
+def evaluate_current_function(self, context=None):
+  """
+  XSLT's `current()`: the node the enclosing rule context matched, enabling
+  cross-element joins plain XPath cannot express (e.g. a `bpmn:messageFlow`
+  joining back to the `bpmn:process` ancestor of the node its `targetRef`
+  names). Outside a schematron validation this falls back to the evaluation
+  context item (making current() equivalent to `.` at the top level).
+  """
+  node = getattr(_current, "node", None)
+  if node is not None:
+    return EtreeElementNode(node)
+  if context is not None and getattr(context, "item", None) is not None:
+    return context.item
+  if self.context is not None:
+    return self.context
+  return None
 
 
 @method(function("mod97-0208", nargs=1, sequence_types=("xs:string?", "xs:boolean")))

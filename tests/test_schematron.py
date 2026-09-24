@@ -1,7 +1,7 @@
 """
 tests for Schematron validation: in-memory source handling (FR-1), the
-Schematron class + structured ValidationResult (FR-2) and the unevaluated
-query bug fix (strict select).
+Schematron class + structured ValidationResult (FR-2), the unevaluated
+query bug fix (strict select) and `current()` support (FR-3).
 
 note: elementpath treats the root Element passed to select() as the document
 node, so rule contexts are evaluated relative to it; the test documents below
@@ -213,3 +213,88 @@ def test_non_fatal_failure_is_no_error(xml_root):
 
 def test_load_schematron_invalid_xml_string_is_none():
   assert schematron.load_schematron("<not-xml") is None
+
+
+# ---------------------------------------------------------------------------
+# FR-3: current() support (cross-element joins)
+
+
+BPMN_XML = """<doc xmlns:b="http://example.com/bpmn">
+  <b:process id="p1">
+    <b:startEvent id="s1"/>
+  </b:process>
+  <b:process id="p2">
+    <b:startEvent id="s2"/>
+  </b:process>
+  <b:messageFlow id="m1" targetRef="s1"/>
+  <b:messageFlow id="m2" targetRef="unknown"/>
+</doc>"""
+
+BPMN_SCHEMATRON = """<schema xmlns="http://purl.oclc.org/dsdl/schematron">
+  <ns prefix="b" uri="http://example.com/bpmn"/>
+  <pattern>
+    <rule context="b:messageFlow">
+      <assert id="M1" test="//b:process[b:startEvent/@id = current()/@targetRef]"
+              flag="fatal">message flow target must be a start event in a process</assert>
+    </rule>
+  </pattern>
+</schema>"""
+
+
+def test_current_joins_to_context_node():
+  # m1 targets s1, which lives in process p1 -> valid; m2 targets 'unknown'
+  # -> violates M1. current() must resolve to each messageFlow itself.
+  result = Schematron(BPMN_SCHEMATRON).validate(ElementTree.fromstring(BPMN_XML))
+  assert not result.valid
+  assert len(result.errors) == 1
+  violation = result.errors[0]
+  assert violation.rule_id == "M1"
+  assert violation.element.get("id") == "m2"
+
+
+def test_current_inside_function_module():
+  # direct elementpath use, no stash bound: current() falls back to the
+  # evaluation context item (equivalent to `.` at the top level)
+  import elementpath
+  from elementpath.xpath3 import XPath3Parser
+
+  import schema_tools.schema.schematron.functions  # noqa: F401
+
+  root = ElementTree.fromstring('<doc><child id="c1"/><other id="x"/></doc>')
+  matched = elementpath.select(
+    root, "child[@id = current()/@id]", namespaces={}, parser=XPath3Parser
+  )
+  assert len(matched) == 1
+  assert matched[0].get("id") == "c1"
+
+
+def test_current_bare_call_is_harmless():
+  # no stash bound: current() falls back to the evaluation context item,
+  # which at the top level is the document root (current() == `.`)
+  import elementpath
+  from elementpath.xpath3 import XPath3Parser
+
+  import schema_tools.schema.schematron.functions  # noqa: F401
+
+  root = ElementTree.fromstring("<doc/>")
+  assert elementpath.select(root, "current()", namespaces={}, parser=XPath3Parser) == [root]
+
+
+def test_current_falls_back_to_context_item():
+  # without a stash-bound node, current() mirrors the dynamic context item
+  import elementpath
+  from elementpath.xpath3 import XPath3Parser
+
+  from schema_tools.schema.schematron.functions import _current, set_current_context
+
+  set_current_context(None)
+  root = ElementTree.fromstring('<doc><child id="c1"/><other id="x"/></doc>')
+  # inside child's predicate, current() == child (the context item)
+  matched = elementpath.select(
+    root,
+    "child[@id = current()/@id and current()/self::child]",
+    namespaces={},
+    parser=XPath3Parser,
+  )
+  assert _current.node is None
+  assert len(matched) == 1
