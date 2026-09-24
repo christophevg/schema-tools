@@ -1,6 +1,7 @@
-from schema_tools.schema      import load
-from schema_tools.schema.json import IntegerSchema, StringSchema, Enum, ConstantValueSchema
-from schema_tools.mapping     import Mapping
+from schema_tools.mapping import Mapping
+from schema_tools.schema import load
+from schema_tools.schema.json import ConstantValueSchema, Enum, IntegerSchema, StringSchema
+
 
 def test_simple_string_mapping(asset):
   source = load(asset("product.json")).select("cost.amount").definition
@@ -14,6 +15,7 @@ def test_simple_string_mapping(asset):
   assert m.is_valid
   assert not m.errors
 
+
 def test_different_value_schemas(asset):
   source = load(asset("product.json")).select("cost.amount").definition
   target = load(asset("invoice.json")).select("lines.price.currency").definition
@@ -26,6 +28,7 @@ def test_different_value_schemas(asset):
   assert not m.is_valid
   assert m.errors
 
+
 def test_warning_for_cast_value_to_string(asset):
   source = IntegerSchema()
   target = StringSchema()
@@ -36,6 +39,7 @@ def test_warning_for_cast_value_to_string(asset):
   assert not m.errors
   assert m.warnings
 
+
 def test_warning_for_cast_enum_to_string(asset):
   source = Enum(enum=[ConstantValueSchema(value="Test")])
   target = StringSchema()
@@ -45,6 +49,7 @@ def test_warning_for_cast_enum_to_string(asset):
   assert m.is_valid
   assert not m.errors
   assert m.warnings
+
 
 def test_simple_enum_mapping(asset):
   source = load(asset("product.json")).select("cost.currency").definition

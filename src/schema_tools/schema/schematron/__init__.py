@@ -6,48 +6,44 @@ Schematron rules are using XSLT Patterns, which require some XSLT engine, which 
 So: this Schematron validation IS NOT perfect, yet good enough to handle a lot and while YMMV, I try to apply more and more fixes, making it more robust ;-)
 """
 
-from typing import List, Union
-
+import json
+import logging
 from pathlib import Path
 
-import json
-
 import elementpath
-
 from elementpath.xpath3 import XPath3Parser
-
-# this injects custom functions in the parser
-import schema_tools.schema.schematron.functions # noqa: F401
-
-from schema_tools import xml
-
 from rich.console import Console
 
-import logging
+# this injects custom functions in the parser
+import schema_tools.schema.schematron.functions  # noqa: F401
+from schema_tools import xml
 
 logger = logging.getLogger(__name__)
 
 console = Console()
 
+
 def select(
-  root, query,
-  namespaces={"":"http://purl.oclc.org/dsdl/schematron"},
+  root,
+  query,
+  namespaces=None,
   context=None,
   variables=None,
   return_list=True,
   return_node=False,
-  debug=False
-) -> Union[bool,List,str]:
+  debug=False,
+) -> bool | list | str:
   """
   utility function wrapping `elementpath.select` with some sensible defaults and error handling
   """
+  if namespaces is None:
+    namespaces = {"": "http://purl.oclc.org/dsdl/schematron"}
   try:
     logger.debug(f"root={root}")
     logger.debug(f"query={query}")
     logger.debug(f"context={context}")
     result = elementpath.select(
-      root, query, namespaces=namespaces, item=context, variables=variables,
-      parser=XPath3Parser
+      root, query, namespaces=namespaces, item=context, variables=variables, parser=XPath3Parser
     )
     logger.debug(f"result={result}")
     # return first value in list
@@ -58,43 +54,46 @@ def select(
     # try opportunistic unwrapping of text node
     if not return_node:
       try:
-        return result.text
+        return str(result.text)
       except AttributeError:
         pass
-    return result
+    return result  # type: ignore[no-any-return]
 
   except elementpath.exceptions.ElementPathValueError as ex:
     logger.error(ex)
     return False
   except (
-    elementpath.exceptions.ElementPathNameError, elementpath.exceptions.ElementPathTypeError
+    elementpath.exceptions.ElementPathNameError,
+    elementpath.exceptions.ElementPathTypeError,
   ) as ex:
     logger.warning(f"for query '{query}':")
     logger.warning(f"can't perform select: {ex}")
     logger.warning(json.dumps(variables, indent=2, default=str))
     return [] if return_list else True
 
-def select_find(*args, **kwargs) -> List:
+
+def select_find(*args, **kwargs) -> list:
   """
   wrapper utility function for `select`, ensuring that a list if returned
   """
   result = select(*args, **kwargs)
-  return result if isinstance(result,list) else []
+  return result if isinstance(result, list) else []
 
-def select_query(*args, **kwargs) -> Union[bool,List,str]:
+
+def select_query(*args, **kwargs) -> bool | list | str:
   """
   wrapper utility function for `select`, ensuring that a value is returned, not a list.
   """
-  return select(*args, **kwargs, return_list=False)
+  kwargs.pop("return_list", None)  # this wrapper overrides return_list
+  return select(*args, **kwargs, return_list=False)  # type: ignore[misc]
+
 
 def schema_namespaces(root):
   """
   detects namespaces in "ns" tags from a Schematron ElementTree
   """
-  return {
-    element.get("prefix") : element.get("uri")
-    for element in select_find(root, "ns")
-  }
+  return {element.get("prefix"): element.get("uri") for element in select_find(root, "ns")}
+
 
 def schema_variables(xml_root, context_root, namespaces=None):
   """
@@ -102,31 +101,27 @@ def schema_variables(xml_root, context_root, namespaces=None):
   """
   variables = {}
   for let in select_find(context_root, "let"):
-    name  = let.get("name")
+    name = let.get("name")
     query = let.get("value")
-    value = select_find(
-      xml_root, query, namespaces=namespaces, variables=variables
-    )
+    value = select_find(xml_root, query, namespaces=namespaces, variables=variables)
     variables[name] = value
     logger.debug(f"discovered variable {name}={value}")
   return variables
+
 
 def validate_schematron(xml_root, schematron_filename) -> int:
   """
   validates an ElementTree against a Schematron
   """
   schematron_root = xml.load(schematron_filename)
-  namespaces      = schema_namespaces(schematron_root)
-  variables       = schema_variables(xml_root, schematron_root, namespaces)
+  namespaces = schema_namespaces(schematron_root)
+  variables = schema_variables(xml_root, schematron_root, namespaces)
 
-  logger.info(
-    f"validating against schematron '{schematron_filename.name}'",
-    extra={"markup": True}
-  )
+  logger.info(f"validating against schematron '{schematron_filename.name}'", extra={"markup": True})
   logger.debug("with variables:")
   logger.debug(json.dumps(variables, indent=2, default=str))
 
-  errors   = 0
+  errors = 0
   warnings = 0
   # for every pattern in the schematron
   for pattern in select_find(schematron_root, "pattern"):
@@ -143,24 +138,26 @@ def validate_schematron(xml_root, schematron_filename) -> int:
 
       # for every context in the schematron/pattern/rule
       contexts = select_find(
-        xml_root, context_query, namespaces=namespaces,
-        variables=variables | pattern_variables | rule_variables
+        xml_root,
+        context_query,
+        namespaces=namespaces,
+        variables=variables | pattern_variables | rule_variables,
       )
       for context in contexts:
         # perform every assertion in the schematron/pattern/rule given context
         for assertion in select_find(rule, "assert"):
           assertion_query = assertion.get("test")
-          fatal           = assertion.get("flag") == "fatal"
+          fatal = assertion.get("flag") == "fatal"
           logger.debug(assertion_query)
-          logger.debug(json.dumps(
-            variables | pattern_variables | rule_variables,
-            indent=2, default=str
-          ))
+          logger.debug(
+            json.dumps(variables | pattern_variables | rule_variables, indent=2, default=str)
+          )
           result = select_query(
-            xml_root, assertion_query,
+            xml_root,
+            assertion_query,
             namespaces=namespaces,
             context=context,
-            variables=variables | pattern_variables | rule_variables
+            variables=variables | pattern_variables | rule_variables,
           )
           if not result:
             if fatal:
@@ -171,16 +168,18 @@ def validate_schematron(xml_root, schematron_filename) -> int:
               warnings += 1
               logger_func = logger.warning
               color = "yellow"
-            logger_func(f"""[{color}]{assertion.text}[/{color}]
+            logger_func(
+              f"""[{color}]{assertion.text}[/{color}]
   [blue]context[/blue]: {context_query}
   [blue]query[/blue]  : {assertion_query}""",
-                extra={"markup": True}
-              )
+              extra={"markup": True},
+            )
   if errors:
     logger.debug(f"schematron errors={errors}")
   if warnings:
     logger.debug(f"schematron warnings={warnings}")
   return errors
+
 
 def validate(xml_root, schematrons):
   """
@@ -199,12 +198,10 @@ def validate(xml_root, schematrons):
     errors += validate_schematron(xml_root, schematron_filename)
 
   if not errors:
-    logger.info(
-      "[bold green]✅ XML is valid[/bold green]",
-      extra={"markup": True}
-    )
+    logger.info("[bold green]✅ XML is valid[/bold green]", extra={"markup": True})
     return True
   return False
+
 
 def query(query, xml_filename, context=None):
   """
@@ -213,7 +210,7 @@ def query(query, xml_filename, context=None):
     % schema-tools schematron query "@schemeID" tests/examples/invoice.xml  "cac:AccountingSupplierParty/cac:Party/cbc:EndpointID"
     0088
   """
-  xml_root   = xml.load(xml_filename)
+  xml_root = xml.load(xml_filename)
   logger.debug(xml_root)
   namespaces = xml.namespaces(xml_filename)
   logger.debug(namespaces)
@@ -222,28 +219,27 @@ def query(query, xml_filename, context=None):
     logger.debug(f"CONTEXT={context}")
   return select_find(xml_root, query, namespaces=namespaces, context=context)
 
+
 def _gen(name, retval, args):
   """
   utility function to generate stubs for functions
   """
   fname = name.replace("-", "_")
-  params = [ f"'{arg}'" for arg in args.values() ] + [ f"'{retval}'"]
+  params = [f"'{arg}'" for arg in args.values()] + [f"'{retval}'"]
   vars = []
   for varname, type in args.items():
     default, cls = {
-      "xs:string"         : ("''", "str"),
-      "xs:string?"        : ("''", "str"),
-      "xs:decimal"        : ("0.0", "(float,int)"),
-      "xs:integer"        : ("0", "int"),
-      "xs:anyAtomicType?" : ("''", "str")
+      "xs:string": ("''", "str"),
+      "xs:string?": ("''", "str"),
+      "xs:decimal": ("0.0", "(float,int)"),
+      "xs:integer": ("0", "int"),
+      "xs:anyAtomicType?": ("''", "str"),
     }[type]
-    vars.append(
-      f"  {varname} = self.get_argument(context, default={default}, cls={cls})"
-    )
+    vars.append(f"  {varname} = self.get_argument(context, default={default}, cls={cls})")
   nl = "\n"
   return f"""
-@method(function("{name}", nargs={len(params)-1},
-  sequence_types=({ ', '.join(params)})))
+@method(function("{name}", nargs={len(params) - 1},
+  sequence_types=({", ".join(params)})))
 def evaluate_{fname}_function(self, context):
   if self.context is not None:
       context = self.context
@@ -252,25 +248,22 @@ def evaluate_{fname}_function(self, context):
   return True
 """
 
+
 def generate_functions(schematron_filename):
   """
   generate function stubs for function definitions found in Schematron
   """
   schematron_root = xml.load(schematron_filename)
-  namespaces      = xml.namespaces(schematron_filename)
+  namespaces = xml.namespaces(schematron_filename)
 
-  for function in select_find(
-    schematron_root, "function", namespaces=namespaces
-  ):
-    name = function.get("name").replace("fn:","").strip()
+  for function in select_find(schematron_root, "function", namespaces=namespaces):
+    name = function.get("name").replace("fn:", "").strip()
     retval = function.get("as").strip()
     args = {}
     for arg in select_find(function, "param", namespaces=namespaces):
       args[arg.get("name")] = arg.get("as", "xs:anyAtomicType?").strip()
     console.print(_gen(name, retval, args))
 
+
 # expose cli-enabled functions
-cli = {
-  "query"              : query,
-  "generate_functions" : generate_functions
-}
+cli = {"query": query, "generate_functions": generate_functions}

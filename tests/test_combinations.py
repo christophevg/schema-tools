@@ -1,5 +1,6 @@
-from schema_tools.schema      import loads
+from schema_tools.schema import loads
 from schema_tools.schema.json import Property
+
 
 def test_selecting_into_all_of():
   src = """
@@ -40,10 +41,11 @@ def test_selecting_into_all_of():
 """
 
   schema = loads(src)
-  assert isinstance( schema.select("a"), Property )
+  assert isinstance(schema.select("a"), Property)
   assert schema.select("a").name == "a"
-  assert isinstance( schema.select("c"), Property )
+  assert isinstance(schema.select("c"), Property)
   assert schema.select("c").name == "c"
+
 
 def test_selecting_into_one_of():
   src = """
@@ -84,10 +86,11 @@ def test_selecting_into_one_of():
 """
 
   schema = loads(src)
-  assert isinstance( schema.select("a"), Property )
+  assert isinstance(schema.select("a"), Property)
   assert schema.select("a").name == "a"
-  assert isinstance( schema.select("c"), Property )
+  assert isinstance(schema.select("c"), Property)
   assert schema.select("c").name == "c"
+
 
 def test_selecting_into_any_of():
   src = """
@@ -128,7 +131,7 @@ def test_selecting_into_any_of():
 """
 
   schema = loads(src)
-  assert isinstance( schema.select("a"), Property )
+  assert isinstance(schema.select("a"), Property)
   assert schema.select("a").name == "a"
-  assert isinstance( schema.select("c"), Property )
+  assert isinstance(schema.select("c"), Property)
   assert schema.select("c").name == "c"

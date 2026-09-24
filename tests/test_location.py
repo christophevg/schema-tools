@@ -1,5 +1,6 @@
 from schema_tools.schema import loads
 
+
 def test_nested_selections():
   src = """{
     "type": "object",

@@ -1,24 +1,25 @@
 from collections import namedtuple
 
-from schema_tools.ast import ValueNode, ListNode, ObjectNode
+from schema_tools.ast import ListNode, ObjectNode, ValueNode
 
-location = namedtuple("NodeLocation", "line column")
+location = namedtuple("location", "line column")
+
 
 def node_location(node):
   try:
     return location(node._line, node._column)
   except AttributeError:
-    raise TypeError("Expected a config node but received a {}.".format(
-      node.__class__.__name__
-    ))
+    raise TypeError(f"Expected a config node but received a {node.__class__.__name__}.") from None
+
 
 class VisitorException(Exception):
   pass
 
-class Visitor(object):
+
+class Visitor:
   def __init__(self, value_class, list_class, object_class):
-    self.value_class  = value_class
-    self.list_class   = list_class
+    self.value_class = value_class
+    self.list_class = list_class
     self.object_class = object_class
 
   def visit(self, obj):
@@ -30,16 +31,13 @@ class Visitor(object):
       elif isinstance(obj, self.value_class):
         return self.visit_value(obj)
       else:
-        raise TypeError("Node type '{}' is not supported by '{}'".format(
-          obj.__class__.__name__, self.__class__.__name__
-        ))
+        raise TypeError(
+          f"Node type '{obj.__class__.__name__}' is not supported by '{self.__class__.__name__}'"
+        )
     except VisitorException as e:
       raise e
     except Exception as e:
-      raise VisitorException("Failed to visit '{}', due to '{}'".format(
-        repr(obj),
-        str(e)
-      ))
+      raise VisitorException(f"Failed to visit '{repr(obj)}', due to '{str(e)}'") from e
 
   def visit_value(self, value_node):
     raise NotImplementedError
@@ -49,6 +47,7 @@ class Visitor(object):
 
   def visit_object(self, object_node):
     raise NotImplementedError
+
 
 class ASTVisitor(Visitor):
   def __init__(self):
@@ -63,15 +62,16 @@ class ASTVisitor(Visitor):
 
   def visit_list(self, list_node):
     self.level += 1
-    children = [ self.visit(item) for item in list_node ]
+    children = [self.visit(item) for item in list_node]
     self.level -= 1
     return children
 
   def visit_object(self, object_node):
     self.level += 1
-    children = { str(key) : self.visit(child) for key, child in object_node.items() }
+    children = {str(key): self.visit(child) for key, child in object_node.items()}
     self.level -= 1
     return children
+
 
 class ASTDumper(ASTVisitor):
   def dump(self, node):
@@ -86,13 +86,13 @@ class ASTDumper(ASTVisitor):
     return "[{},{}]{} ".format(*location, self.indent())
 
   def visit_value(self, value_node):
-    return "{}{}".format(self.location(value_node), value_node())
+    return f"{self.location(value_node)}{value_node()}"
 
   def visit_object(self, object_node):
     children = []
     for key, child in super().visit_object(object_node).items():
       # reuse location of child for key
-      children.append("{}{}".format(self.location(object_node[key]), key))
+      children.append(f"{self.location(object_node[key])}{key}")
       if isinstance(child, list):
         children.extend(child)
       else:

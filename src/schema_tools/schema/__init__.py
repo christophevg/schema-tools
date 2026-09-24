@@ -1,31 +1,35 @@
 import collections
-
 import inspect
 
-from schema_tools        import json
-from schema_tools.utils  import ASTVisitor
+from schema_tools import json
+from schema_tools.utils import ASTVisitor
 
 UnknownProperty = collections.namedtuple("UnknownProperty", "name definition")
+
 
 def load(path, parser=json):
   return build(parser.load(path), origin=path)
 
+
 def loads(src, parser=json, origin=None):
   return build(parser.loads(src), origin=origin)
 
+
 def build(nodes, origin=None):
   from schema_tools.schema.json import SchemaMapper
+
   schema = NodesMapper(SchemaMapper()).visit(nodes)
   schema._origin = origin
   return schema
+
 
 class NodesMapper(ASTVisitor):
   def __init__(self, *mappers):
     super().__init__()
     self.mappers = [
-      func \
-      for mapper in mappers \
-      for func in inspect.getmembers(mapper, predicate=callable) \
+      func
+      for mapper in mappers
+      for func in inspect.getmembers(mapper, predicate=callable)
       if func[0].startswith("map_")
     ]
 
@@ -36,14 +40,15 @@ class NodesMapper(ASTVisitor):
     properties = super().visit_object(object_node)
     properties["_location"] = self.location(object_node)
 
-    for name, mapper in self.mappers:
+    for _name, mapper in self.mappers:
       result = mapper(properties)
       if result:
         return result
 
     return Schema(**properties)
 
-class Mapper(object):
+
+class Mapper:
   def has(self, properties, name, of_type=None, containing=None):
     if name not in properties:
       return False
@@ -62,18 +67,19 @@ class Mapper(object):
         return False
     return bool(value)
 
-class Schema(object):
-  args = {}
+
+class Schema:
+  args: dict = {}
   _location = None
-  _origin   = None
+  _origin = None
 
   def __init__(self, **kwargs):
-    self.parent    = None
+    self.parent = None
     self._location = None
-    self._origin   = None
+    self._origin = None
     if "_location" in kwargs:
       self._location = kwargs.pop("_location")
-    self.args     = kwargs   # catchall properties
+    self.args = kwargs  # catchall properties
     # drop examples
     if "examples" in kwargs and not isinstance(kwargs["examples"], IdentifiedSchema):
       kwargs.pop("examples")
@@ -99,7 +105,7 @@ class Schema(object):
     stack = []
     self.select(*path, stack=stack)
     # add UnknownProperties for not returned items in stack
-    for missing in path[len(stack):]:
+    for missing in path[len(stack) :]:
       stack.append(UnknownProperty(missing, None))
     return stack
 
@@ -117,15 +123,14 @@ class Schema(object):
 
   def _select(self, *path, stack=None):
     # print(stack, "schema", path)
-    return None # default
+    return None  # default
 
   def __repr__(self):
-    props = { k: v for k, v in self.args.items() }  # TODO not "if v" ?
+    props = dict(self.args.items())  # TODO not "if v" ?
     props.update(self._more_repr())
     props["<location>"] = self._location
     return "{}({})".format(
-      self.__class__.__name__,
-      ", ".join( [ "{}={}".format(k, v) for k, v in props.items() ] )
+      self.__class__.__name__, ", ".join([f"{k}={v}" for k, v in props.items()])
     )
 
   def _more_repr(self):
@@ -137,11 +142,13 @@ class Schema(object):
     items = {}
     for k, v in self.args.items():
       if isinstance(v, Schema):
-        v = v.to_dict(deref=deref, prefix=prefix, stack=stack+[k])
+        v = v.to_dict(deref=deref, prefix=prefix, stack=stack + [k])
       elif isinstance(v, list):
         vv = []
         for i in v:
-          vv.append(i.to_dict(deref=deref, prefix=prefix, stack=stack+[k]) if isinstance(i, Schema) else i)
+          vv.append(
+            i.to_dict(deref=deref, prefix=prefix, stack=stack + [k]) if isinstance(i, Schema) else i
+          )
         v = vv
       elif v is None or isinstance(v, (str, int, float)):
         pass
@@ -170,8 +177,10 @@ class Schema(object):
   def origin(self):
     return self.root._origin
 
+
 class IdentifiedSchema(Schema):
   pass
+
 
 class ConstantValueSchema(IdentifiedSchema):
   def to_dict(self, deref=False, prefix=None, stack=None):

@@ -1,7 +1,7 @@
-from schema_tools        import yaml
+from schema_tools import yaml
 from schema_tools.schema import loads
+from schema_tools.schema.json import ObjectSchema, StringSchema
 
-from schema_tools.schema.json import StringSchema, ObjectSchema
 
 def test_swagger_component_definitions():
   src = """
@@ -28,6 +28,7 @@ components:
   assert isinstance(schema.property("someotherthing"), ObjectSchema)
   assert isinstance(schema.select("someotherthing.foo").definition, StringSchema)
 
+
 def test_swagger_select_components():
   src = """
 components:
@@ -44,6 +45,7 @@ components:
   schema = loads(src, parser=yaml)
   assert isinstance(schema.definition("sometype"), StringSchema)
   assert isinstance(schema.select("components.schemas.sometype").definition, StringSchema)
+
 
 def test_swagger_structure():
   yaml_src = """

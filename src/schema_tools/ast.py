@@ -1,21 +1,19 @@
-class SchemaNode(object):
+class SchemaNode:
   def __init__(self, line, column):
-    self._line   = line
+    self._line = line
     self._column = column
 
 
 class ValueNode(SchemaNode):
   def __init__(self, value, line, column):
     super().__init__(line, column)
-    self._value  = value
+    self._value = value
 
   def replace(self, find, replace_by):
     return self._value.replace(find, replace_by)
 
   def __repr__(self):
-    return "ValueNode(value={}, line={}, column={})".format(
-      self._value, self._line, self._column
-    )
+    return f"ValueNode(value={self._value}, line={self._line}, column={self._column})"
 
   def __call__(self):
     return self._value
@@ -26,30 +24,29 @@ class ValueNode(SchemaNode):
     return self._value == other._value
 
   def __hash__(self):
-    return hash( (self._value, self._line, self._column) )
+    return hash((self._value, self._line, self._column))
+
 
 class ListNode(SchemaNode):
   def __init__(self, items, line, column):
     super().__init__(line, column)
-    self._items   = items
+    self._items = items
     self.current = -1
 
   def __iter__(self):
     return iter(self._items)
 
   def __setitem__(self, key, item):
-      self._items[key] = item
+    self._items[key] = item
 
   def __getitem__(self, key):
-      return self._items[key]
+    return self._items[key]
 
   def __repr__(self):
-    return "ListNode(len={}, line={}, column={})".format(
-      len(self._items), self._line, self._column
-    )
+    return f"ListNode(len={len(self._items)}, line={self._line}, column={self._column})"
 
   def __call__(self):
-    return [ v() for v in self ]
+    return [v() for v in self]
 
   def __eq__(self, other):
     if not isinstance(other, self.__class__):
@@ -59,10 +56,11 @@ class ListNode(SchemaNode):
         return False
     return True
 
+
 class ObjectNode(SchemaNode):
   def __init__(self, items, line, column):
     super().__init__(line, column)
-    self._items  = items
+    self._items = items
 
   def __iter__(self):
     return iter(self._items.items())
@@ -77,9 +75,7 @@ class ObjectNode(SchemaNode):
     return self._items[key]
 
   def __repr__(self):
-    return "ObjectNode(len={}, line={}, column={})".format(
-      len(self._items), self._line, self._column
-    )
+    return f"ObjectNode(len={len(self._items)}, line={self._line}, column={self._column})"
 
   def __len__(self):
     return len(self._items)
@@ -112,9 +108,7 @@ class ObjectNode(SchemaNode):
     return self._items.items()
 
   def __call__(self):
-    return {
-      k : v() for k, v in self.items()
-    }
+    return {k: v() for k, v in self.items()}
 
   def __eq__(self, other):
     if not isinstance(other, self.__class__):

@@ -1,13 +1,11 @@
+from importlib.resources import as_file, files
+from pathlib import Path
 from xml.etree import ElementTree
 
-from pathlib import Path
-
-from importlib.resources import as_file, files
-
-from schema_tools        import resources
-from schema_tools        import xml
-from schema_tools.schema import xml as xml_schema
+from schema_tools import resources, xml
 from schema_tools.schema import schematron
+from schema_tools.schema import xml as xml_schema
+
 
 def validate(src, doctype="Invoice"):
   """
@@ -24,16 +22,11 @@ def validate(src, doctype="Invoice"):
 
   # running from package, setup files context
   with as_file(files(resources)) as resource_root:
-    if xml_schema.validate(
-      xml_root,
-      resource_root / f"UBL-2/xsd/maindoc/UBL-{doctype}-2.1.xsd"
-    ):
-      schematron.validate(xml_root, [
-        resource_root / "CEN-EN16931-UBL.sch",
-        resource_root / "PEPPOL-EN16931-UBL.sch"
-      ])
+    if xml_schema.validate(xml_root, resource_root / f"UBL-2/xsd/maindoc/UBL-{doctype}-2.1.xsd"):
+      schematron.validate(
+        xml_root, [resource_root / "CEN-EN16931-UBL.sch", resource_root / "PEPPOL-EN16931-UBL.sch"]
+      )
+
 
 # expose cli-enabled functions
-cli = {
-  "validate" : validate
-}
+cli = {"validate": validate}

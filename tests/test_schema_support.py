@@ -1,7 +1,14 @@
-from schema_tools             import json, yaml
-from schema_tools.schema      import loads
-from schema_tools.schema.json import StringSchema, IntegerSchema
-from schema_tools.schema.json import ObjectSchema, Reference, AnyOf, Property
+from schema_tools import json, yaml
+from schema_tools.schema import loads
+from schema_tools.schema.json import (
+  AnyOf,
+  IntegerSchema,
+  ObjectSchema,
+  Property,
+  Reference,
+  StringSchema,
+)
+
 
 def test_string_schema():
   json_src = """{
@@ -18,6 +25,7 @@ def test_string_schema():
   schema = loads(json_src)
 
   assert isinstance(schema, StringSchema)
+
 
 def test_object_schema():
   json_src = """{
@@ -42,6 +50,7 @@ def test_object_schema():
   assert len(schema.properties) == 1
   assert schema.properties[0].name == "url"
   assert isinstance(schema.properties[0].definition, StringSchema)
+
 
 def test_nested_object_schema():
   json_src = """{
@@ -79,6 +88,7 @@ def test_nested_object_schema():
   assert schema.properties[0].definition.properties[0].name == "url"
   assert isinstance(schema.properties[0].definition.properties[0].definition, StringSchema)
 
+
 def test_definitions():
   json_src = """{
     "$schema": "http://json-schema.org/draft-07/schema#",
@@ -114,6 +124,7 @@ def test_definitions():
   assert len(schema.definitions[0].definition.properties) == 1
   assert schema.definitions[0].definition.properties[0].name == "url"
   assert isinstance(schema.definitions[0].definition.properties[0].definition, StringSchema)
+
 
 def test_ref():
   json_src = """{
@@ -153,6 +164,7 @@ def test_ref():
   assert schema.properties[0].name == "home"
   assert schema.properties[0].is_ref()
   assert isinstance(schema.properties[0]._definition, Reference)
+
 
 def test_anyof():
   json_src = """{
@@ -201,6 +213,7 @@ def test_anyof():
   assert isinstance(schema.properties[0].definition.options[0], Reference)
   assert isinstance(schema.properties[0].definition.options[1], Reference)
 
+
 def test_all_of_properties():
   src = """
 type: object
@@ -226,8 +239,9 @@ definitions:
   assert isinstance(schema.select("x"), Property)
   assert isinstance(schema.select("x").definition, StringSchema)
 
+
 def test_combination_with_schema_dumping():
-  src="""
+  src = """
 {
   "type": "object",
   "properties": {
@@ -255,6 +269,7 @@ def test_combination_with_schema_dumping():
   schema = loads(src)
   d = schema.to_dict()
   json.dumps(d)
+
 
 def test_array_tuple_support():
   src = """

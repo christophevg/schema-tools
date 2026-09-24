@@ -1,14 +1,12 @@
+import logging
 import os
 import sys
-import logging
 
-import fire
-
-from schema_tools        import peppol
-from schema_tools.schema import ubl
-from schema_tools.schema import schematron
-
+import fire  # type: ignore[import-untyped]
 from rich.logging import RichHandler
+
+from schema_tools import peppol
+from schema_tools.schema import schematron, ubl
 
 # setup logging infrastructure
 
@@ -18,17 +16,12 @@ else:
   LOG_LEVEL = "ERROR"
 
 FORMAT = "%(message)s"
-logging.basicConfig(
-  level=LOG_LEVEL, format=FORMAT, datefmt="[%X]",
-  handlers=[RichHandler()]
-)
+logging.basicConfig(level=LOG_LEVEL, format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
+
 
 def cli():
-  fire.Fire({
-    "ubl"       : ubl.cli,
-    "schematron": schematron.cli,
-    "peppol"    : peppol.cli
-  })
+  fire.Fire({"ubl": ubl.cli, "schematron": schematron.cli, "peppol": peppol.cli})
+
 
 if __name__ == "__main__":
   cli()

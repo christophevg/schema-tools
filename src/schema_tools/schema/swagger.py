@@ -1,10 +1,11 @@
-from schema_tools.schema import Schema, Mapper
-from schema_tools.schema.json import ObjectSchema, Definition, Property
+from schema_tools.schema import Mapper, Schema
+from schema_tools.schema.json import Definition, ObjectSchema, Property
+
 
 class Components(Schema):
-  def __init__(self, schemas=[], **kwargs):
+  def __init__(self, schemas=None, **kwargs):
     super().__init__(**kwargs)
-    self.schemas = schemas
+    self.schemas = schemas if schemas is not None else []
     for schema in self.schemas:
       schema.parent = self
 
@@ -12,7 +13,7 @@ class Components(Schema):
     for schema in self.schemas:
       if schema.name == key:
         return schema.definition if return_definition else schema
-    raise KeyError("'{}' is not a known schema".format(key))
+    raise KeyError(f"'{key}' is not a known schema")
 
   # def _select(self, name, *remainder, stack=[]):
   #   # print(stack, "components", name, remainder)
@@ -27,16 +28,12 @@ class Components(Schema):
   #   return result
 
   def _more_repr(self):
-    return {
-      "schemas" : len(self.schemas)
-    }
+    return {"schemas": len(self.schemas)}
 
   def to_dict(self):
     out = super().to_dict()
     if self.schemas:
-      out["schemas"] = {
-        s.name : s.to_dict() for s in self.schemas
-      }
+      out["schemas"] = {s.name: s.to_dict() for s in self.schemas}
     return out
 
   # def dependencies(self, resolve=False):
@@ -46,11 +43,10 @@ class Components(Schema):
   #     for dependency in prop.dependencies(resolve=resolve)
   #   })
 
-class SwaggerMapper(Mapper):
 
+class SwaggerMapper(Mapper):
   def map_components(self, properties):
-    if self.has( properties, "components" ) and \
-       self.has( properties["components"], "schemas" ):
+    if self.has(properties, "components") and self.has(properties["components"], "schemas"):
       # schemas = [
       #   Definition(name, definition) \
       #   for name, definition in properties["components"]["schemas"].items()
@@ -59,12 +55,10 @@ class SwaggerMapper(Mapper):
 
       # schemas = properties["schemas"]
       properties["schemas"] = [
-        Property(name, definition) \
-        for name, definition in properties["properties"].items()
+        Property(name, definition) for name, definition in properties["properties"].items()
       ]
       if self.has(properties, "definitions"):
         properties["definitions"] = [
-          Definition(name, definition) \
-          for name, definition in properties["definitions"].items()
+          Definition(name, definition) for name, definition in properties["definitions"].items()
         ]
       return ObjectSchema(**properties)

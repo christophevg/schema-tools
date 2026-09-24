@@ -1,13 +1,12 @@
-import xmlschema
 import logging
+
+import xmlschema
 
 logger = logging.getLogger(__name__)
 
+
 def validate(xml_root, xsd_filename):
-  logger.info(
-    f"validating against XSD '{xsd_filename.name}'",
-    extra={"markup": True}
-  )
+  logger.info(f"validating against XSD '{xsd_filename.name}'", extra={"markup": True})
   # XSD validation
   try:
     xmlschema.validate(xml_root, xsd_filename)
@@ -18,5 +17,5 @@ def validate(xml_root, xsd_filename):
     logger.error(f"[red][XSD] {ex}[/red]", extra={"markup": True})
   except xmlschema.validators.exceptions.XMLSchemaChildrenValidationError as ex:
     logger.error(f"[red][XSD] {ex.reason}[/red]", extra={"markup": True})
-    logger.debug(str(ex)) # full exception with schema and instance excerpts
+    logger.debug(str(ex))  # full exception with schema and instance excerpts
   return False

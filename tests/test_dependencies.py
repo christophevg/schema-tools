@@ -1,5 +1,6 @@
 from schema_tools.schema import load, loads
 
+
 def test_dependency_discovery(asset):
   original_file = asset("invoice.json")
   schema = load(original_file)
@@ -13,8 +14,9 @@ def test_dependency_discovery(asset):
   #     currencies
   # ----------
   # product, guid, money
-  assert len(schema.dependencies()) == 3                # kind, product & money
-  assert len(schema.dependencies(external=True)) == 5   # + guid and currencies
+  assert len(schema.dependencies()) == 3  # kind, product & money
+  assert len(schema.dependencies(external=True)) == 5  # + guid and currencies
+
 
 def test_dependencies_within_references(asset):
   src = """
@@ -35,6 +37,7 @@ def test_dependencies_within_references(asset):
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
+
 
 def test_dependencies_within_references2(asset):
   src = """
@@ -102,6 +105,7 @@ def test_dependencies_in_combination(asset):
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
+
 
 def test_dependencies_in_tuple(asset):
   src = """

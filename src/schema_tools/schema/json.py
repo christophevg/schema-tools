@@ -1,20 +1,22 @@
+from pathlib import Path
+from urllib.parse import urlparse
+
 import requests
 from requests_file import FileAdapter
 
-from urllib.parse import urlparse
-from pathlib import Path
-
 from schema_tools import yaml
-from schema_tools.schema import Schema, Mapper, loads, IdentifiedSchema, ConstantValueSchema
+from schema_tools.schema import ConstantValueSchema, IdentifiedSchema, Mapper, Schema, loads
+
 
 def log(*args):
   if False:
     print(*args)
 
+
 class ObjectSchema(IdentifiedSchema):
-  def __init__(self, properties=None, definitions=None,
-                     allOf=None, anyOf=None, oneOf=None,
-                    **kwargs):
+  def __init__(
+    self, properties=None, definitions=None, allOf=None, anyOf=None, oneOf=None, **kwargs
+  ):
     super().__init__(**kwargs)
 
     if properties is None:
@@ -52,13 +54,12 @@ class ObjectSchema(IdentifiedSchema):
     for definition in self.definitions:
       if definition.name == key:
         return definition.definition if return_definition else definition
-    raise KeyError("'{}' is not a known definition".format(key))
+    raise KeyError(f"'{key}' is not a known definition")
 
   def _combinations(self):
-    for combination in [ self.allOf, self.anyOf, self.oneOf ]:
+    for combination in [self.allOf, self.anyOf, self.oneOf]:
       if isinstance(combination, Combination):
-        for option in combination.options:
-          yield option
+        yield from combination.options
 
   def property(self, key, return_definition=True):
     # local properties
@@ -73,7 +74,7 @@ class ObjectSchema(IdentifiedSchema):
         return candidate.property(key, return_definition=return_definition)
       except Exception:
         pass
-    raise KeyError("'{}' is not a known property".format(key))
+    raise KeyError(f"'{key}' is not a known property")
 
   def _select(self, name, *remainder, stack=None):
     if stack is None:
@@ -105,8 +106,8 @@ class ObjectSchema(IdentifiedSchema):
 
   def _more_repr(self):
     return {
-      "properties"  : [ prop.name for prop in self.properties ],
-      "definitions" : [ definition.name for definition in self.definitions ],
+      "properties": [prop.name for prop in self.properties],
+      "definitions": [definition.name for definition in self.definitions],
       # "allOf"       : [ repr(candidate) for candidate in self.allOf.options ],
       # "oneOf"       : [ repr(candidate) for candidate in self.oneOf.options ],
       # "anyOf"       : [ repr(candidate) for candidate in self.anyOf.options ]
@@ -118,44 +119,47 @@ class ObjectSchema(IdentifiedSchema):
     out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     if self.properties:
       out["properties"] = {
-        p.name : p.to_dict(deref=deref, prefix=prefix, stack=stack+["properties"]) for p in self.properties
+        p.name: p.to_dict(deref=deref, prefix=prefix, stack=stack + ["properties"])
+        for p in self.properties
       }
     if self.definitions:
       out["definitions"] = {
-        d.name : d.to_dict(deref=deref, prefix=prefix, stack=stack+["definitions"]) for d in self.definitions
+        d.name: d.to_dict(deref=deref, prefix=prefix, stack=stack + ["definitions"])
+        for d in self.definitions
       }
     if self.allOf:
       out["allOf"] = [
-         a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.allOf.options
+        a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.allOf.options
       ]
     if self.oneOf:
       out["oneOf"] = [
-         a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.oneOf.options
+        a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.oneOf.options
       ]
     if self.anyOf:
       out["anyOf"] = [
-         a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.anyOf.options
+        a.to_dict(deref=deref, prefix=prefix, stack=stack) for a in self.anyOf.options
       ]
     return out
 
   def dependencies(self, external=False, visited=None):
-    return list({
-      dependency \
-      for prop in self.properties + list(self._combinations()) \
-      for dependency in prop.dependencies(external=external, visited=visited)
-    })
+    return list(
+      {
+        dependency
+        for prop in self.properties + list(self._combinations())
+        for dependency in prop.dependencies(external=external, visited=visited)
+      }
+    )
+
 
 class Definition(IdentifiedSchema):
   def __init__(self, name, definition):
-    self.name              = name
-    self._definition       = definition
+    self.name = name
+    self._definition = definition
     if isinstance(self._definition, Schema):
       self._definition.parent = self
       self._location = self._definition._location
     else:
-      raise ValueError("unsupported items type: '{}'".format(
-        self.items.__class__.__type__)
-      )
+      raise ValueError(f"unsupported items type: '{self.items.__class__.__type__}'")
 
   def is_ref(self):
     return isinstance(self._definition, Reference)
@@ -168,10 +172,7 @@ class Definition(IdentifiedSchema):
     return d
 
   def _more_repr(self):
-    return {
-      "name"       : self.name,
-      "definition" : repr(self._definition)
-    }
+    return {"name": self.name, "definition": repr(self._definition)}
 
   def to_dict(self, deref=False, prefix=None, stack=None):
     if stack is None:
@@ -188,20 +189,34 @@ class Definition(IdentifiedSchema):
   def dependencies(self, external=False, visited=None):
     return self._definition.dependencies(external=external, visited=visited)
 
+
 class Property(Definition):
   pass
+
+
 class ValueSchema(IdentifiedSchema):
   pass
+
+
 class StringSchema(ValueSchema):
   pass
+
+
 class IntegerSchema(ValueSchema):
   pass
+
+
 class NullSchema(ValueSchema):
   pass
+
+
 class NumberSchema(ValueSchema):
   pass
+
+
 class BooleanSchema(ValueSchema):
   pass
+
 
 class ArraySchema(IdentifiedSchema):
   def __init__(self, items=None, **kwargs):
@@ -212,21 +227,17 @@ class ArraySchema(IdentifiedSchema):
     elif self.items is None:
       self.items = []
     else:
-      raise ValueError("unsupported items type: '{}'".format(
-        self.items.__class__.__name__)
-      )
+      raise ValueError(f"unsupported items type: '{self.items.__class__.__name__}'")
 
   def _more_repr(self):
-    return {
-      "items" : repr(self.items)
-    }
+    return {"items": repr(self.items)}
 
   def to_dict(self, deref=False, prefix=None, stack=None):
     if stack is None:
       stack = []
     out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
     if isinstance(self.items, Schema):
-      out["items"] = self.items.to_dict(deref=deref, prefix=prefix, stack=stack+["items"])
+      out["items"] = self.items.to_dict(deref=deref, prefix=prefix, stack=stack + ["items"])
     else:
       out["items"] = self.items
     return out
@@ -241,34 +252,31 @@ class ArraySchema(IdentifiedSchema):
     if isinstance(self.items, Schema):
       return self.items.dependencies(external=external, visited=visited)
     else:
-      return list({
-        dependency \
-        for item in self.items \
-        for dependency in item.dependencies(external=external, visited=visited)
-      })
+      return list(
+        {
+          dependency
+          for item in self.items
+          for dependency in item.dependencies(external=external, visited=visited)
+        }
+      )
+
 
 class TupleItem(Definition):
   def _more_repr(self):
-    return {
-      "index"      : self.name,
-      "definition" : repr(self._definition)
-    }
+    return {"index": self.name, "definition": repr(self._definition)}
+
 
 class TupleSchema(IdentifiedSchema):
   def __init__(self, items=None, **kwargs):
     super().__init__(**kwargs)
     self.items = items
     if not isinstance(self.items, list):
-      raise ValueError("tuple items should be list, not: '{}'".format(
-        self.items.__class__.__name__)
-      )
+      raise ValueError(f"tuple items should be list, not: '{self.items.__class__.__name__}'")
     for item in self.items:
       item.parent = self
 
   def _more_repr(self):
-    return {
-      "items" : repr(self.items)
-    }
+    return {"items": repr(self.items)}
 
   def item(self, index):
     return self[index].definition
@@ -278,12 +286,11 @@ class TupleSchema(IdentifiedSchema):
       raise TypeError("tuple access only with numeric indices")
     return self.items[index]
 
-
   def to_dict(self, deref=False, prefix=None, stack=None):
     if stack is None:
       stack = []
     out = super().to_dict(deref=deref, prefix=prefix, stack=stack)
-    out["items"] = [ item.to_dict(deref=deref, prefix=prefix, stack=stack) for item in self.items ]
+    out["items"] = [item.to_dict(deref=deref, prefix=prefix, stack=stack) for item in self.items]
     return out
 
   def _select(self, index, *path, stack=None):
@@ -294,11 +301,14 @@ class TupleSchema(IdentifiedSchema):
       return self[int(index)]
 
   def dependencies(self, external=False, visited=None):
-    return list({
-      dependency \
-      for item in self.items \
-      for dependency in item.dependencies(external=external, visited=visited)
-    })
+    return list(
+      {
+        dependency
+        for item in self.items
+        for dependency in item.dependencies(external=external, visited=visited)
+      }
+    )
+
 
 class Combination(IdentifiedSchema):
   def __init__(self, options=None, **kwargs):
@@ -308,9 +318,7 @@ class Combination(IdentifiedSchema):
       option.parent = self
 
   def _more_repr(self):
-    return {
-      "options"  : len(self.options)
-    }
+    return {"options": len(self.options)}
 
   def to_dict(self, deref=False, prefix=None, stack=None):
     if stack is None:
@@ -319,7 +327,7 @@ class Combination(IdentifiedSchema):
     name = self.__class__.__name__
     name = name[0].lower() + name[1:]
     out[name] = [
-      o.to_dict(deref=deref, prefix=prefix, stack=stack+[name]+[str(index)]) \
+      o.to_dict(deref=deref, prefix=prefix, stack=stack + [name] + [str(index)])
       for index, o in enumerate(self.options)
     ]
     return out
@@ -327,7 +335,7 @@ class Combination(IdentifiedSchema):
   def _select(self, *path, stack=None):
     log(stack, "combination", path)
     best_stack = []
-    result     = None
+    result = None
     for option in self.options:
       local_stack = []
       result = option._select(*path, stack=local_stack)
@@ -339,18 +347,26 @@ class Combination(IdentifiedSchema):
     return result
 
   def dependencies(self, external=False, visited=None):
-    return list({
-      dependency \
-      for option in self.options \
-      for dependency in option.dependencies(external=external, visited=visited)
-    })
+    return list(
+      {
+        dependency
+        for option in self.options
+        for dependency in option.dependencies(external=external, visited=visited)
+      }
+    )
+
 
 class AllOf(Combination):
   pass
+
+
 class AnyOf(Combination):
   pass
+
+
 class OneOf(Combination):
   pass
+
 
 class Reference(IdentifiedSchema):
   def __init__(self, ref=None, **kwargs):
@@ -358,12 +374,10 @@ class Reference(IdentifiedSchema):
     self.ref = ref.value
 
   def __repr__(self):
-    return "Reference(ref={})".format( self.ref )
+    return f"Reference(ref={self.ref})"
 
   def _more_repr(self):
-    return {
-      "$ref" : self.ref
-    }
+    return {"$ref": self.ref}
 
   def to_dict(self, deref=False, prefix=None, stack=None):
     if stack is None:
@@ -375,17 +389,17 @@ class Reference(IdentifiedSchema):
         prefix = "#/" + "/".join(stack)
         return self.resolve(strip_id=True).to_dict(deref=deref, prefix=prefix, stack=stack)
       else:
-        return { "$ref" : prefix + self.ref[1:] }
-    return { "$ref" : self.ref }
+        return {"$ref": prefix + self.ref[1:]}
+    return {"$ref": self.ref}
 
   def resolve(self, return_definition=True, strip_id=False):
-    url      = ""
+    url = ""
     fragment = ""
     parts = self.ref.split("#")
     if len(parts) == 1:
       url = self.ref
     else:
-      url      = parts[0]
+      url = parts[0]
       fragment = parts[1]
 
     if url:
@@ -442,7 +456,7 @@ class Reference(IdentifiedSchema):
     try:
       doc = s.get(url)
     except Exception as e:
-      raise ValueError("unable to fetch '{}', due to '{}'".format(url, str(e)))
+      raise ValueError(f"unable to fetch '{url}', due to '{str(e)}'") from e
 
     src = doc.text
     try:
@@ -452,7 +466,7 @@ class Reference(IdentifiedSchema):
         return loads(src, parser=yaml)
       except Exception as e:
         print(src)
-        raise ValueError("unable to parse '{}', due to '{}'".format(url, str(e)))
+        raise ValueError(f"unable to parse '{url}', due to '{str(e)}'") from e
 
   def _select(self, *path, stack=None):
     log(self._stack, "ref", path)
@@ -470,11 +484,18 @@ class Reference(IdentifiedSchema):
     visited.append(self)
     if self.is_remote:
       if external:
-        return list(set( self.resolve(return_definition=False).dependencies(external=external, visited=visited) + [ self ] ))
+        return list(
+          set(
+            self.resolve(return_definition=False).dependencies(external=external, visited=visited)
+            + [self]
+          )
+        )
       else:
-        return [ self ]
+        return [self]
     else:
-      return list(set( self.resolve(return_definition=False).dependencies(external=external, visited=visited) ))
+      return list(
+        set(self.resolve(return_definition=False).dependencies(external=external, visited=visited))
+      )
 
   def __hash__(self):
     return hash(self.ref)
@@ -484,6 +505,7 @@ class Reference(IdentifiedSchema):
       return self.ref == other.ref
     else:
       return False
+
 
 class Enum(IdentifiedSchema):
   def __init__(self, enum=None, **kwargs):
@@ -497,44 +519,44 @@ class Enum(IdentifiedSchema):
           self.values.append(e.value)
 
   def _more_repr(self):
-    return {
-      "enum"  : self.values
-    }
+    return {"enum": self.values}
 
   def to_dict(self, deref=False, prefix=None, stack=None):
-    return { "enum" : self.values }
+    return {"enum": self.values}
 
 
 class SchemaMapper(Mapper):
-
   def map_object(self, properties):
-    if self.has( properties, "type", "object" ) or \
-       self.has( properties, "type", list, containing="object") or \
-       ( self.has(properties, "properties") and \
-         not isinstance(properties["properties"], IdentifiedSchema) ) or \
-       ( self.has(properties, "components") and \
-         not isinstance(properties["components"], IdentifiedSchema) ):
+    if (
+      self.has(properties, "type", "object")
+      or self.has(properties, "type", list, containing="object")
+      or (
+        self.has(properties, "properties")
+        and not isinstance(properties["properties"], IdentifiedSchema)
+      )
+      or (
+        self.has(properties, "components")
+        and not isinstance(properties["components"], IdentifiedSchema)
+      )
+    ):
       # properties and definitions bubble up as Generic Schemas
       if self.has(properties, "properties"):
         properties["properties"] = [
-          Property(name, definition) \
-          for name, definition in properties["properties"].items()
+          Property(name, definition) for name, definition in properties["properties"].items()
         ]
       if self.has(properties, "definitions"):
         properties["definitions"] = [
-          Definition(name, definition) \
-          for name, definition in properties["definitions"].items()
+          Definition(name, definition) for name, definition in properties["definitions"].items()
         ]
       if self.has(properties, "components") and properties["components"].schemas:
         components = properties.pop("components")
         if "definitions" not in properties:
           properties["definitions"] = []
         properties["definitions"] += [
-          Definition(name, definition) \
-          for name, definition in components.schemas.items()
+          Definition(name, definition) for name, definition in components.schemas.items()
         ]
       # extract combinations
-      for combination, cls in { "allOf" : AllOf, "oneOf" : OneOf, "anyOf": AnyOf }.items():
+      for combination, cls in {"allOf": AllOf, "oneOf": OneOf, "anyOf": AnyOf}.items():
         options = self._combine_options(properties, combination, combination.lower())
         if options:
           properties[combination] = cls(options=options)
@@ -544,9 +566,9 @@ class SchemaMapper(Mapper):
     value_mapping = {
       "boolean": BooleanSchema,
       "integer": IntegerSchema,
-      "null":    NullSchema,
-      "number":  NumberSchema,
-      "string":  StringSchema
+      "null": NullSchema,
+      "number": NumberSchema,
+      "string": StringSchema,
     }
     if self.has(properties, "type", value_mapping):
       return value_mapping[properties["type"].value](**properties)
@@ -556,8 +578,7 @@ class SchemaMapper(Mapper):
       return
     if self.has(properties, "items", list):
       properties["items"] = [
-        TupleItem(index, value) \
-        for index, value in enumerate(properties["items"])
+        TupleItem(index, value) for index, value in enumerate(properties["items"])
       ]
       return TupleSchema(**properties)
     return ArraySchema(**properties)

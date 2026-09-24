@@ -1,7 +1,17 @@
-from schema_tools.schema      import loads, load
-from schema_tools.schema.json import ObjectSchema, ArraySchema, TupleSchema
-from schema_tools.schema.json import StringSchema, IntegerSchema
-from schema_tools.schema.json import Definition, Property, Enum
+import pytest
+
+from schema_tools.schema import load, loads
+from schema_tools.schema.json import (
+  ArraySchema,
+  Definition,
+  Enum,
+  IntegerSchema,
+  ObjectSchema,
+  Property,
+  StringSchema,
+  TupleSchema,
+)
+
 
 def test_simple_selections():
   json_src = """{
@@ -16,15 +26,16 @@ def test_simple_selections():
     }
   }
   """
-  
+
   schema = loads(json_src)
-  
-  assert isinstance(schema,                               ObjectSchema)
+
+  assert isinstance(schema, ObjectSchema)
   home = schema.select("home")
   assert isinstance(home, Property)
   assert isinstance(home.definition, StringSchema)
 
   assert isinstance(schema.select("business").definition, StringSchema)
+
 
 def test_nested_selections():
   json_src = """{
@@ -49,11 +60,12 @@ def test_nested_selections():
 
   schema = loads(json_src)
 
-  assert isinstance(schema,                                ObjectSchema)
-  assert isinstance(schema.select("home").definition,                 ObjectSchema)
-  assert isinstance(schema.select("home.address").definition,         ObjectSchema)
-  assert isinstance(schema.select("home.address.street").definition,  StringSchema)
+  assert isinstance(schema, ObjectSchema)
+  assert isinstance(schema.select("home").definition, ObjectSchema)
+  assert isinstance(schema.select("home.address").definition, ObjectSchema)
+  assert isinstance(schema.select("home.address.street").definition, StringSchema)
   assert schema.select("home.address.phone") is None
+
 
 def test_reference_to_definition_selections():
   json_src = """{
@@ -83,10 +95,11 @@ def test_reference_to_definition_selections():
 
   schema = loads(json_src)
 
-  assert isinstance(schema,                                           ObjectSchema)
-  assert isinstance(schema.select("home").definition,                 ObjectSchema)
-  assert isinstance(schema.select("home.address").definition,         ObjectSchema)
-  assert isinstance(schema.select("home.address.street").definition,  StringSchema)
+  assert isinstance(schema, ObjectSchema)
+  assert isinstance(schema.select("home").definition, ObjectSchema)
+  assert isinstance(schema.select("home.address").definition, ObjectSchema)
+  assert isinstance(schema.select("home.address.street").definition, StringSchema)
+
 
 def test_anyof_refs():
   json_src = """{
@@ -133,7 +146,7 @@ def test_anyof_refs():
 
   schema = loads(json_src)
 
-  home     = schema.select("home.url").definition
+  home = schema.select("home.url").definition
   business = schema.select("business.url").definition
 
   assert isinstance(home, StringSchema)
@@ -146,6 +159,7 @@ def test_anyof_refs():
   assert business.parent.parent.parent.name == "address"
 
   assert home is business
+
 
 def test_external_reference_with_fragment(asset):
   json_src = """{
@@ -160,16 +174,18 @@ def test_external_reference_with_fragment(asset):
 
   schema = loads(json_src)
 
-  assert( isinstance(schema.select("foreign.currency").definition, Enum) )
+  assert isinstance(schema.select("foreign.currency").definition, Enum)
+
 
 def test_tracing(asset):
   schema = load(asset("invoice.json"))
-  trace  = schema.trace("lines.price.amount")
+  trace = schema.trace("lines.price.amount")
 
   assert len(trace) == 3
-  assert trace[0].name == "lines"  and isinstance(trace[0].definition, ArraySchema)
-  assert trace[1].name == "price"  and isinstance(trace[1].definition, ObjectSchema)
+  assert trace[0].name == "lines" and isinstance(trace[0].definition, ArraySchema)
+  assert trace[1].name == "price" and isinstance(trace[1].definition, ObjectSchema)
   assert trace[2].name == "amount" and isinstance(trace[2].definition, IntegerSchema)
+
 
 def test_none_selectors(asset):
   schema = load(asset("invoice.json"))
@@ -179,27 +195,30 @@ def test_none_selectors(asset):
   trace = schema.trace(None, "lines")
   assert len(trace) == 0
 
+
 def test_none_string_selectors(asset):
   schema = load(asset("invoice.json"))
   try:
     schema.select(1)
-    assert False
+    pytest.fail("should not be selectable")
   except ValueError:
     pass
   try:
     schema.select("lines", 1)
-    assert False
+    pytest.fail("should not be selectable")
   except ValueError:
     pass
 
+
 def test_incomplete_trace(asset):
   schema = load(asset("invoice.json"))
-  trace  = schema.trace("lines.price.amount2")
+  trace = schema.trace("lines.price.amount2")
 
   assert len(trace) == 3
-  assert trace[0].name == "lines"   and isinstance(trace[0].definition, ArraySchema)
-  assert trace[1].name == "price"   and isinstance(trace[1].definition, ObjectSchema)
+  assert trace[0].name == "lines" and isinstance(trace[0].definition, ArraySchema)
+  assert trace[1].name == "price" and isinstance(trace[1].definition, ObjectSchema)
   assert trace[2].name == "amount2" and trace[2].definition is None
+
 
 def test_overlapping_paths():
   src = """
@@ -273,6 +292,7 @@ def test_overlapping_paths():
   assert len(trace) == 4
   assert trace[1].definition.tag.value == 3
 
+
 def test_accessing_array_tuple():
   src = """
 {
@@ -307,6 +327,7 @@ def test_accessing_array_tuple():
 
   assert isinstance(schema.select("list.0").definition, StringSchema)
   assert isinstance(schema.select("list.1.value").definition, IntegerSchema)
+
 
 def test_end_of_trace_is_top_level_schema(asset):
   src = """

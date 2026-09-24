@@ -63,6 +63,10 @@ dev = [
   "tox>=4.0.0",
   "tox-uv>=1.0.0",
   "coveralls>=3.3.0",
+  "types-PyYAML",
+  "types-Markdown",
+  "types-xmltodict",
+  "types-requests",
 ]
 
 [project.urls]

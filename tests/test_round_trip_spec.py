@@ -1,14 +1,16 @@
-import json
 import difflib
+import json
 
 from schema_tools.schema import load, loads
-from schema_tools.schema.json import ObjectSchema, AnyOf, Property, Enum
+from schema_tools.schema.json import AnyOf, Enum, ObjectSchema, Property
+
 
 def diff(expected, actual):
   expected = expected.splitlines(1)
   actual = actual.splitlines(1)
   diff = difflib.unified_diff(expected, actual)
-  return ''.join(diff)
+  return "".join(diff)
+
 
 def test_round_trip_spec(asset):
   original_file = asset("json-schema-draft-07.json")
@@ -19,10 +21,11 @@ def test_round_trip_spec(asset):
   schema = load(original_file).to_dict()
 
   original_dump = json.dumps(original, indent=2, sort_keys=True)
-  gen_dump      = json.dumps(schema, indent=2, sort_keys=True)
+  gen_dump = json.dumps(schema, indent=2, sort_keys=True)
 
   print(diff(original_dump, gen_dump))
   assert original == schema
+
 
 def test_untyped_object():
   src = """
