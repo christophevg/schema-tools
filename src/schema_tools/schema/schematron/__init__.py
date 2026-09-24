@@ -8,6 +8,7 @@ So: this Schematron validation IS NOT perfect, yet good enough to handle a lot a
 
 import json
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -33,9 +34,14 @@ def select(
   return_list=True,
   return_node=False,
   debug=False,
+  strict=False,
 ) -> bool | list | str:
   """
   utility function wrapping `elementpath.select` with some sensible defaults and error handling
+
+  strict=True propagates evaluator errors (unsupported functions, unparsable
+  patterns) instead of returning a neutral result that would let an assert
+  silently pass.
   """
   if namespaces is None:
     namespaces = {"": "http://purl.oclc.org/dsdl/schematron"}
@@ -61,12 +67,16 @@ def select(
     return result  # type: ignore[no-any-return]
 
   except elementpath.exceptions.ElementPathValueError as ex:
+    if strict:
+      raise
     logger.error(ex)
     return False
   except (
     elementpath.exceptions.ElementPathNameError,
     elementpath.exceptions.ElementPathTypeError,
   ) as ex:
+    if strict:
+      raise
     logger.warning(f"for query '{query}':")
     logger.warning(f"can't perform select: {ex}")
     logger.warning(json.dumps(variables, indent=2, default=str))
@@ -129,80 +139,151 @@ def load_schematron(src):
   raise ValueError(f"unsupported schematron src type: {type(src)}")
 
 
+@dataclass
+class Violation:
+  """a failed Schematron assert, with everything needed for reporting"""
+
+  rule_id: str | None  # assert @id (absent in many rulesets)
+  flag: str | None  # assert @flag as authored ("fatal", "warning", ...)
+  level: str  # derived: "error" if flag == "fatal", else "warning"
+  message: str  # assert text, raw — no value substitution
+  context: str  # rule @context XPath, as authored
+  element: ElementTree.Element  # the matched context node
+  line: int | None  # element.sourceline; None with stdlib ElementTree (no
+  # line tracking), populated when elements come from a parser that records it
+
+
+@dataclass
+class Unevaluated:
+  """an XPath the evaluator could not evaluate — a potential silent pass"""
+
+  context: str  # rule @context ("" for schema-level lets)
+  query: str  # the XPath that could not be evaluated
+  reason: str  # exception class + message
+
+
+@dataclass
+class ValidationResult:
+  """outcome of validating one document against one Schematron"""
+
+  violations: list[Violation] = field(default_factory=list)
+  unevaluated: list[Unevaluated] = field(default_factory=list)
+
+  @property
+  def valid(self) -> bool:
+    # warnings do not invalidate (legacy error-count semantics), but
+    # unevaluated queries do: validity cannot be claimed for a ruleset
+    # that was only partially evaluated
+    return not self.errors and not self.unevaluated
+
+  @property
+  def errors(self) -> list[Violation]:
+    return [v for v in self.violations if v.level == "error"]
+
+  @property
+  def warnings(self) -> list[Violation]:
+    return [v for v in self.violations if v.level == "warning"]
+
+
+class Schematron:
+  """
+  a Schematron loaded once (ElementTree, path, string, bytes or file-like),
+  reusable across documents via `validate`
+  """
+
+  def __init__(self, src):
+    self.root = load_schematron(src)
+    self.namespaces = schema_namespaces(self.root)
+
+  def validate(self, xml_root, strict=False) -> ValidationResult:
+    """validates an ElementTree against this Schematron"""
+    result = ValidationResult()
+    variables = schema_variables(xml_root, self.root, self.namespaces)
+
+    # for every pattern in the schematron
+    for pattern in select_find(self.root, "pattern"):
+      pattern_variables = schema_variables(xml_root, pattern, self.namespaces)
+
+      # for every rule in the schematron/pattern
+      for rule in select_find(pattern, "rule"):
+        rule_variables = schema_variables(xml_root, rule, self.namespaces)
+        context_query = rule.get("context")
+        merged = variables | pattern_variables | rule_variables
+
+        # for every context matched by the schematron/pattern/rule; under
+        # strict, evaluator errors propagate instead of being recorded
+        try:
+          contexts = select_find(
+            xml_root, context_query, namespaces=self.namespaces, variables=merged, strict=True
+          )
+        except elementpath.exceptions.ElementPathError as ex:
+          if strict:
+            raise
+          result.unevaluated.append(Unevaluated(context_query, context_query, _reason(ex)))
+          continue
+
+        for context in contexts:
+          # perform every assertion in the schematron/pattern/rule given context
+          for assertion in select_find(rule, "assert"):
+            assertion_query = assertion.get("test")
+            try:
+              result_ok = select_query(
+                xml_root,
+                assertion_query,
+                namespaces=self.namespaces,
+                context=context,
+                variables=merged,
+                strict=True,
+              )
+            except elementpath.exceptions.ElementPathError as ex:
+              if strict:
+                raise
+              result.unevaluated.append(Unevaluated(context_query, assertion_query, _reason(ex)))
+              continue
+            if not result_ok:
+              flag = assertion.get("flag")
+              result.violations.append(
+                Violation(
+                  rule_id=assertion.get("id"),
+                  flag=flag,
+                  level="error" if flag == "fatal" else "warning",
+                  message=assertion.text or "",
+                  context=context_query,
+                  element=context,
+                  line=getattr(context, "sourceline", None),
+                )
+              )
+    return result
+
+
+def _reason(ex) -> str:
+  return f"{type(ex).__module__}.{type(ex).__qualname__}: {ex}"
+
+
 def validate_schematron(xml_root, schematron) -> int:
   """
   validates an ElementTree against a Schematron, given as an ElementTree,
-  file path, string, bytes or file-like object
+  file path, string, bytes or file-like object; returns the number of fatal
+  errors and logs all findings (legacy interface — prefer `Schematron`)
   """
-  schematron_root = load_schematron(schematron)
-  namespaces = schema_namespaces(schematron_root)
-  variables = schema_variables(xml_root, schematron_root, namespaces)
-
   schematron_label = (
     Path(schematron).name if isinstance(schematron, (str, Path)) else "in-memory schematron"
   )
   logger.info(f"validating against schematron '{schematron_label}'", extra={"markup": True})
-  logger.debug("with variables:")
-  logger.debug(json.dumps(variables, indent=2, default=str))
 
-  errors = 0
-  warnings = 0
-  # for every pattern in the schematron
-  for pattern in select_find(schematron_root, "pattern"):
-    pattern_variables = schema_variables(xml_root, pattern, namespaces)
-    logger.debug("pattern variables:")
-    logger.debug(json.dumps(pattern_variables, indent=2, default=str))
-
-    # for every rule in the schematron/pattern
-    for rule in select_find(pattern, "rule"):
-      rule_variables = schema_variables(xml_root, rule, namespaces)
-      logger.debug("rule variables:")
-      logger.debug(json.dumps(rule_variables, indent=2, default=str))
-      context_query = rule.get("context")
-
-      # for every context in the schematron/pattern/rule
-      contexts = select_find(
-        xml_root,
-        context_query,
-        namespaces=namespaces,
-        variables=variables | pattern_variables | rule_variables,
-      )
-      for context in contexts:
-        # perform every assertion in the schematron/pattern/rule given context
-        for assertion in select_find(rule, "assert"):
-          assertion_query = assertion.get("test")
-          fatal = assertion.get("flag") == "fatal"
-          logger.debug(assertion_query)
-          logger.debug(
-            json.dumps(variables | pattern_variables | rule_variables, indent=2, default=str)
-          )
-          result = select_query(
-            xml_root,
-            assertion_query,
-            namespaces=namespaces,
-            context=context,
-            variables=variables | pattern_variables | rule_variables,
-          )
-          if not result:
-            if fatal:
-              errors += 1
-              logger_func = logger.error
-              color = "red"
-            else:
-              warnings += 1
-              logger_func = logger.warning
-              color = "yellow"
-            logger_func(
-              f"""[{color}]{assertion.text}[/{color}]
-  [blue]context[/blue]: {context_query}
-  [blue]query[/blue]  : {assertion_query}""",
-              extra={"markup": True},
-            )
-  if errors:
-    logger.debug(f"schematron errors={errors}")
-  if warnings:
-    logger.debug(f"schematron warnings={warnings}")
-  return errors
+  result = Schematron(schematron).validate(xml_root)
+  for unevaluated in result.unevaluated:
+    logger.warning(f"unevaluated query '{unevaluated.query}': {unevaluated.reason}")
+  for violation in result.violations:
+    logger_func = logger.error if violation.level == "error" else logger.warning
+    color = "red" if violation.level == "error" else "yellow"
+    logger_func(
+      f"""[{color}]{violation.message}[/{color}]
+  [blue]context[/blue]: {violation.context}
+  [blue]rule id[/blue]: {violation.rule_id}""",
+      extra={"markup": True},
+    )
+  return len(result.errors)
 
 
 def validate(xml_root, schematrons):
