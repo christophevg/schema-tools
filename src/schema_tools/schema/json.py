@@ -1,5 +1,6 @@
 from pathlib import Path
 from urllib.parse import urlparse
+from urllib.request import url2pathname
 
 import requests
 from requests_file import FileAdapter
@@ -447,11 +448,13 @@ class Reference(IdentifiedSchema):
   def _fetch(self, url):
     s = requests.Session()
     s.mount("file:", FileAdapter())
-    # make sure file url is absolute
+    # make sure file url is a proper absolute file:// URI (relative refs are
+    # resolved against the CWD, as they always have been; url2pathname
+    # handles Windows drive letters in /D:/... form)
     u = urlparse(url)
     if u.scheme == "file":
-      u = u._replace(path=str(Path(u.path).absolute()))
-      url = u.geturl()
+      path = Path(url2pathname(u.path))
+      url = path.absolute().as_uri()
 
     try:
       doc = s.get(url)

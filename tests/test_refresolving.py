@@ -54,14 +54,14 @@ def test_external_references(asset):
     "type": "object",
     "properties" : {
       "home" : {
-        "$ref" : "file:%%%%"
+                "$ref" : "%%%%"
       },
       "business" : {
         "$ref" : "https://localhost/schemas/unknown.json"
       }
     }
   }
-  """.replace("%%%%", asset("guid.json"))
+  """.replace("%%%%", asset("guid.json").uri)
 
   schema = loads(json_src)
 
@@ -83,11 +83,11 @@ def test_external_reference_with_fragment(asset):
     "type": "object",
     "properties" : {
       "foreign" : {
-        "$ref" : "file:%%%%"
+                "$ref" : "%%%%"
       }
     }
   }
-  """.replace("%%%%", asset("money.json#/properties/currency"))
+  """.replace("%%%%", asset("money.json#/properties/currency").uri)
 
   schema = loads(json_src)
 
@@ -103,11 +103,11 @@ def test_origin_of_external_reference(asset):
     "type": "object",
     "properties" : {
       "foreign" : {
-        "$ref" : "file:%%%%"
+                "$ref" : "%%%%"
       }
     }
   }
-  """.replace("%%%%", asset("money.json#/properties/currency"))
+  """.replace("%%%%", asset("money.json#/properties/currency").uri)
 
   schema = loads(json_src)
 

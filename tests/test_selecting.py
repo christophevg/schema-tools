@@ -166,11 +166,11 @@ def test_external_reference_with_fragment(asset):
     "type": "object",
     "properties" : {
       "foreign" : {
-        "$ref" : "file:%%%%"
+                "$ref" : "%%%%"
       }
     }
   }
-  """.replace("%%%%", asset("money.json"))
+  """.replace("%%%%", asset("money.json").uri)
 
   schema = loads(json_src)
 
@@ -338,13 +338,13 @@ def test_end_of_trace_is_top_level_schema(asset):
       "type": "object",
       "properties" : {
         "id" : {
-          "$ref" : "file:%%%%"
+                  "$ref" : "%%%%"
         }
       }
     }
   }
 }
-""".replace("%%%%", asset("guid.json"))
+""".replace("%%%%", asset("guid.json").uri)
 
   schema = loads(src)
   trace = schema.trace("level.id")

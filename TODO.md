@@ -13,8 +13,8 @@ Backlog of things to do. Completed items are checked off and kept visible.
 - [x] root `README.md` per standard (incl. agentic badge), `.github/README.md` removed
 - [x] legacy files removed (`setup.py`, `tox.ini`, `requirements*.txt`, `MANIFEST.in`)
 - [x] `env-dev` + `test` (58 passed) + `docs` verified locally
-- [ ] code-quality remediation: ruff 82 findings, 30 files unformatted, mypy 10 errors
-- [ ] `make check` fully green (pre-publish/CI gate for all future work)
+- [x] code-quality remediation: ruff 82 findings, 30 files unformatted, mypy 10 errors
+- [x] `make check` fully green (pre-publish/CI gate for all future work) — 58 tests, mypy clean, ruff clean
 - [ ] push, CI green on GitHub, RTD build green
 
 ## Loading

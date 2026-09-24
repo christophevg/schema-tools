@@ -29,11 +29,11 @@ def test_dependencies_within_references(asset):
   },
   "definitions" : {
     "aType" : {
-      "$ref" : "file:%%%%"
+            "$ref" : "%%%%"
     }
   }
 }
-""".replace("%%%%", asset("money.json"))
+""".replace("%%%%", asset("money.json").uri)
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
@@ -53,13 +53,13 @@ def test_dependencies_within_references2(asset):
       "type" : "object",
       "properties" : {
         "b" : {
-          "$ref" : "file:%%%%"
+                "$ref" : "%%%%"
         }
       }
     }
   }
 }
-""".replace("%%%%", asset("money.json"))
+""".replace("%%%%", asset("money.json").uri)
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
@@ -95,13 +95,13 @@ def test_dependencies_in_combination(asset):
       "type" : "object",
       "properties" : {
         "c": {
-          "$ref" : "file:%%%%"
+                "$ref" : "%%%%"
         }
       }
     }
   }
 }
-""".replace("%%%%", asset("money.json"))
+""".replace("%%%%", asset("money.json").uri)
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1
@@ -116,11 +116,11 @@ def test_dependencies_in_tuple(asset):
       "type" : "string"
     },
     {
-      "$ref" : "file:%%%%"
+            "$ref" : "%%%%"
     }
   ]
 }
-""".replace("%%%%", asset("money.json"))
+""".replace("%%%%", asset("money.json").uri)
 
   schema = loads(src)
   assert len(schema.dependencies()) == 1

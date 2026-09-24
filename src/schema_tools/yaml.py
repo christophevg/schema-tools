@@ -4,7 +4,7 @@ from schema_tools.ast import ListNode, ObjectNode, ValueNode
 
 
 def load(path):
-  with open(path) as file:
+  with open(path, encoding="utf-8") as file:
     return yaml.load(file, Loader=YamlSchemaLoader)
 
 
