@@ -1,4 +1,5 @@
 venv
+.venv/
 dist
 *.egg-info
 *.pyc
@@ -8,7 +9,7 @@ coverage.lcov
 .tox
 docs/_build
 *.backup
-.python-version
 .DS_Store
 local
 *.local
+SESSION.md

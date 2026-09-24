@@ -1,37 +1,66 @@
-name: build
+name: Test
 
-on: [push]
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
         with:
-          python-version: ${{ matrix.python-version }}
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff pytest coverage
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          if [ -f requirements.test.txt ]; then pip install -r requirements.test.txt; fi
-      - name: Lint with ruff
-        run: |
-          # stop the build if there are Python syntax errors or undefined names
-          ruff check --output-format=github --select=E9,F63,F7,F82 --target-version=py311 .
-          # default set of ruff rules with GitHub Annotations
-          ruff check --output-format=github --target-version=py311 .
-      - name: Test with PyTest and generate coverage report
-        run: |
-          coverage run -m pytest
-          coverage lcov
-          coverage report
-      - name: Coveralls
+        run: uv sync --frozen --all-extras
+
+      - name: Run tests
+        run: uv run pytest -v --cov=schema_tools --cov-report=xml
+
+      - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
+        if: matrix.python-version == '3.10' && matrix.os == 'ubuntu-latest'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./coverage.xml
+          fail-on-error: false
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v8.2.0
+      - run: uv sync --frozen --all-extras
+      - run: uv run ruff check src tests
+      - run: uv run ruff format --check src tests
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v8.2.0
+      - run: uv sync --frozen --all-extras
+      - run: uv run mypy src
+
+  build:
+    needs: [test, lint, typecheck]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v8.2.0
+      - run: uv sync --frozen --all-extras
+      - run: uv build

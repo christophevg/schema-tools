@@ -22,7 +22,7 @@ autodoc2_render_plugin = "myst"
 
 autodoc2_packages = [
   {
-    "path": "../schema_tools",
+    "path": "../src/schema_tools",
     "exclude_dirs" : [ "templates" ],
     "auto_mode": False
   }

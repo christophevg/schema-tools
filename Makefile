@@ -1,171 +1,103 @@
 -include ~/.yoker/Makefile
 
--include .env
+.PHONY: env-dev env-run install-pythons test test-cov test-all format format-check lint typecheck check run docs docs-view build pre-publish publish publish-test clean clean-all local-schema web help
 
-# colors
+## Environment
 
-GREEN=\033[0;32m
-RED=\033[0;31m
-BLUE=\033[0;34m
-NC=\033[0m
+env-dev: ## Install all dependencies (dev + docs + web)
+	uv sync --all-extras
 
-# test envs
+env-run: ## Install runtime dependencies only
+	uv sync
 
-PYTHON_VERSIONS ?= 3.9.18 3.10.13 3.11.12 3.12.10
-RUFF_PYTHON_VERSION ?= py311
+install-pythons: ## Install Python 3.10, 3.11, 3.12, 3.13
+	uv python install 3.10 3.11 3.12 3.13
 
-# base env to create non-test envs from, e.g.: -docs -run
-PYTHON_BASE ?= 3.11.12
+## Testing
 
-PROJECT=$(shell basename $(CURDIR))
+test: env-dev ## Run tests (usage: make test / optional: TEST=file|file:test_name)
+	uv run pytest -v $(TEST)
 
-# by default we assume a project environment with the project/folder name
-# this can be overridden using an enrionment variable
-ifeq ($(PROJECT_ENV),)
-PROJECT_ENV := $(PROJECT)
-endif
+test-cov: env-dev ## Run tests with coverage
+	uv run pytest --cov=schema_tools --cov-report=term-missing $(TEST)
 
+test-all: env-dev ## Run tests on all Python versions
+	uv run tox
 
-LOG_LEVEL?=INFO
-SILENT?=yes
+## Code Quality
 
+format: env-dev ## Format code and fix linting issues
+	uv run ruff format src tests
+	uv run ruff check --fix src tests
 
-RUN_CMD?=LOG_LEVEL=$(LOG_LEVEL) python -m schema_tools
-RUN_ARGS?=
+format-check: env-dev ## Check code formatting without modifying
+	uv run ruff format --check src tests
 
-TEST_ENVS=$(addprefix $(PROJECT)-test-,$(PYTHON_VERSIONS))
+lint: env-dev ## Check code for linting issues
+	uv run ruff check src tests
 
-install: install-envs
+typecheck: env-dev ## Run type checking
+	uv run mypy src
 
-install-envs: install-env-run install-env-docs install-env-test env
-	@echo "👷‍♂️ $(BLUE)installing requirements in $(PROJECT)$(NC)"
-	@pyenv local $(PROJECT_ENV)
-	@pip install -U pip > /dev/null
-	@pip install -U wheel twine setuptools build > /dev/null
+check: format-check lint typecheck test ## Run all quality checks
 
-install-env-run:
-	@echo "👷‍♂️ $(BLUE)creating virtual environment $(PROJECT)-run$(NC)"
-	@pyenv local --unset
-	@-pyenv virtualenv $(PYTHON_BASE) $(PROJECT)-run > /dev/null
-	@pyenv local $(PROJECT)-run
-	@pip install -U pip > /dev/null
-	@pip install -r requirements.txt > /dev/null
-	@[ -f requirements.run.txt ] && pip install -r requirements.run.txt > /dev/null || true
+## Running
 
-install-env-docs:
-	@echo "👷‍♂️ $(BLUE)creating virtual environment $(PROJECT)-docs$(NC)"
-	@pyenv local --unset
-	@-pyenv virtualenv $(PYTHON_BASE) $(PROJECT)-docs > /dev/null
-	@pyenv local $(PROJECT)-docs
-	@pip install -U pip > /dev/null
-	@pip install -r requirements.docs.txt > /dev/null
+run: env-run ## Run the CLI
+	uv run python -m schema_tools
 
-install-env-test: $(TEST_ENVS)
+## Documentation
 
-$(PROJECT)-test-%:
-	@echo "👷‍♂️ $(BLUE)creating virtual test environment $@$(NC)"
-	@pyenv local --unset
-	@-pyenv virtualenv $* $@ > /dev/null
-	@pyenv local $@
-	@pip install -U pip > /dev/null
-	@pip install -U ruff tox coverage > /dev/null
+docs: env-dev ## Build HTML documentation
+	cd docs && uv run sphinx-build -M html . _build
 
-uninstall: uninstall-envs
+docs-view: docs ## Build and open documentation in browser
+	open docs/_build/html/index.html
 
-uninstall-envs: uninstall-env-test uninstall-env-docs uninstall-env-run env
+## Build & Publish
 
-uninstall-env-test: $(addprefix uninstall-env-test-,$(PYTHON_VERSIONS))
+build: ## Build distribution packages
+	uv build
 
-$(addprefix uninstall-env-test-,$(PYTHON_VERSIONS)) uninstall-env-docs uninstall-env-run: uninstall-env-%:
-	@echo "👷‍♂️ $(RED)deleting virtual environment $(PROJECT)-$*$(NC)"
-	@-pyenv virtualenv-delete -f $(PROJECT)-$*
+pre-publish: check ## Pre-publication checks (run before publishing)
+	@echo "Checking for relative image paths in README..."
+	@grep -n '!\[.*](media/' README.md && (echo "ERROR: Relative image paths found - use raw GitHub URLs for PyPI"; exit 1) || echo "OK: No relative image paths"
+	@echo "Checking version sync..."
+	@VERSION_PY=$$(grep '^version =' pyproject.toml | cut -d'"' -f2); \
+	VERSION_INIT=$$(grep '^__version__ = ' src/schema_tools/__init__.py | cut -d'"' -f2); \
+	if [ "$$VERSION_PY" != "$$VERSION_INIT" ]; then \
+		echo "ERROR: Version mismatch - pyproject.toml ($$VERSION_PY) vs __init__.py ($$VERSION_INIT)"; \
+		exit 1; \
+	fi; \
+	echo "OK: Versions match ($$VERSION_PY)"
+	@echo "Pre-publication checks passed"
 
-reinstall: uninstall install
+publish: clean build ## Publish to PyPI (runs pre-publish checks)
+	@$(MAKE) pre-publish
+	uv run twine upload dist/*
 
-clean-env:
-	@echo "👷‍♂️ $(RED)deleting all packages from current environment$(NC)"
-	@pip freeze | cut -d"@" -f1 | cut -d'=' -f1 | xargs pip uninstall -y > /dev/null
+publish-test: build ## Publish to TestPyPI
+	uv run twine upload --repository testpypi dist/*
 
-upgrade:
-	@echo "👷‍♂️ $(BLUE)upgrading outdated packages$(NC)"
-	@pip list --outdated | tail +3 | cut -d " " -f 1 | xargs -n1 pip install -U
+## Cleanup
 
-# env switching
+clean: ## Remove build artifacts
+	rm -rf dist/ build/ *.egg-info .pytest_cache .coverage .mypy_cache .ruff_cache
+	rm -rf docs/_build
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 
-env-%:
-	@echo "👷‍♂️ $(BLUE)activating $* environment$(NC)"
-	@pyenv local $(PROJECT)-$*
+clean-all: clean ## Remove virtualenv and lock file
+	rm -rf .venv uv.lock
 
-env:
-	@echo "👷‍♂️ $(BLUE)activating project environment$(NC)"
-	@pyenv local $(PROJECT_ENV)
+# Project-specific targets (preserved from previous Makefile setup)
 
-env-test:
-	@echo "👷‍♂️ $(BLUE)activating test environments$(NC)"
-	@pyenv local $(TEST_ENVS)
-
-# functional targets
-
-run: env-run
-	@echo "👷‍♂️ $(BLUE)running$(GREEN) $(RUN_CMD) $(RUN_ARGS)$(NC)"
-	@$(RUN_CMD) $(RUN_ARGS)
-
-test: lint tox env
-coverage: lint tox coverage-report env
-
-tox: env-test
-	@echo "👷‍♂️ $(BLUE)performing tests$(NC)"
-ifeq ($(SILENT),yes)
-	@tox -q
-else
-	@tox
-endif
-
-coverage-report: env-test
-	@echo "👷‍♂️ $(BLUE)creating coverage reports$(NC)"
-	@coverage report
-	@coverage html
-	@coverage lcov
-
-lint: env-test
-	@ruff check --target-version=$(RUFF_PYTHON_VERSION) .
-
-docs: env-docs
-	@echo "👷‍♂️ $(BLUE)building documentation$(NC)"
-	@cd docs; make html
-	@open docs/_build/html/index.html
-
-# packaging targets
-
-publish-test: env dist
-	@echo "👷‍♂️ $(BLUE)publishing to PyPI test$(NC)"
-	@twine upload --repository testpypi dist/*
-
-publish: env dist
-	@echo "👷‍♂️ $(BLUE)publishing to PyPI$(NC)"
-	@twine upload dist/*
-
-dist: env dist-clean
-	@echo "👷‍♂️ $(BLUE)building distribution$(NC)"
-	@python -m build > /dev/null
-
-dist-clean: clean
-	@rm -rf dist build *.egg-info
-
-clean:
-	@find . -type f -name "*.backup" | xargs rm
-
-.PHONY: dist docs test
-
-# app specific targets
-
-local/schema:
-	mkdir -p $@
-	cd $@
+local-schema: ## Download UBL and PEPPOL schemas into local/schema
+	mkdir -p local/schema
+	cd local/schema
 	curl -O https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.zip
 	unzip UBL-2.1.zip
 	curl -O https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch
 	curl -O https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch
 
-web: env-run
-	gunicorn -k eventlet -w 1 schema_tools.web:app
+web: env-run ## Run the schema viewer web app
+	uv run gunicorn -k eventlet -w 1 schema_tools.web:app

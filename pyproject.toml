@@ -1,0 +1,148 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "schema-tools"
+version = "0.3.1"
+description = "Collection of tools to parse, query, map,... Json/Yaml schemas"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+  {name = "Christophe VG", email = "contact@christophe.vg"}
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Environment :: Console",
+  "Topic :: Software Development",
+  "Typing :: Typed",
+]
+keywords = ["json", "yaml", "schema", "tools"]
+dependencies = [
+  "json-cfg",
+  "pyyaml",
+  "requests",
+  "requests-file",
+  "rich",
+  "xmlschema",
+  "elementpath",
+  "fire",
+  "flask",
+  "dnspython",
+  "xmltodict",
+  "markdown",
+  "jinja2_highlight",
+]
+
+[project.optional-dependencies]
+docs = [
+  "sphinx>=7.0.0",
+  "sphinx-autodoc2>=0.5.0",
+  "sphinx-rtd-theme>=2.0.0",
+  "myst-parser>=2.0.0",
+]
+web = [
+  "eventlet",
+  "gunicorn",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-cov>=5.0.0",
+  "mypy>=1.13.0",
+  "ruff>=0.8.0",
+  "tox>=4.0.0",
+  "tox-uv>=1.0.0",
+  "coveralls>=3.3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/christophevg/schema-tools"
+Documentation = "https://schema-tools.readthedocs.io/"
+Repository = "https://github.com/christophevg/schema-tools"
+Issues = "https://github.com/christophevg/schema-tools/issues"
+
+[project.scripts]
+schema-tools = "schema_tools.__main__:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/schema_tools"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --cov=schema_tools --cov-report=term-missing"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = [
+  "jsoncfg.*",
+  "dns.*",
+  "elementpath.*",
+  "xmlschema.*",
+  "jinja2_highlight.*",
+  "requests_file.*",
+]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+indent-width = 2
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "UP",  # pyupgrade
+]
+ignore = [
+  "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["schema_tools"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.coverage.run]
+source = ["schema_tools"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+]
+
+[tool.tox]
+env_list = ["py310", "py311", "py312", "py313"]
+
+[tool.tox.env_run_base]
+description = "run tests with pytest"
+skip_install = false
+commands_pre = [
+  ["uv", "pip", "install", "-e", "."],
+  ["uv", "pip", "install", "pytest", "pytest-cov"],
+]
+commands = [["pytest", "tests", "-v", "--cov=schema_tools", "--cov-report=term-missing"]]
