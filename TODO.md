@@ -15,7 +15,9 @@ Backlog of things to do. Completed items are checked off and kept visible.
 - [x] `env-dev` + `test` (58 passed) + `docs` verified locally
 - [x] code-quality remediation: ruff 82 findings, 30 files unformatted, mypy 10 errors
 - [x] `make check` fully green (pre-publish/CI gate for all future work) — 58 tests, mypy clean, ruff clean
-- [ ] push, CI green on GitHub, RTD build green
+- [x] CI green on GitHub — full matrix (3 OS × 4 Python) + lint + typecheck + build (run 35977142946)
+- [x] Windows compatibility: proper `file:///` URIs in refs (`url2pathname` + `as_uri`), explicit `encoding="utf-8"` on text reads, `asset` fixture emits URIs
+- [ ] RTD build green on `docs` extra (+ `docs/code.md` toctree decision)
 
 ## Loading
 
