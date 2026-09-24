@@ -9,6 +9,7 @@ So: this Schematron validation IS NOT perfect, yet good enough to handle a lot a
 import json
 import logging
 from pathlib import Path
+from xml.etree import ElementTree
 
 import elementpath
 from elementpath.xpath3 import XPath3Parser
@@ -109,15 +110,38 @@ def schema_variables(xml_root, context_root, namespaces=None):
   return variables
 
 
-def validate_schematron(xml_root, schematron_filename) -> int:
+def load_schematron(src):
   """
-  validates an ElementTree against a Schematron
+  loads a Schematron from a file path, string, bytes or file-like object,
+  returning a parsed ElementTree (see also `schema_tools.schema.ubl.validate`
+  for the same source-sniffing approach on the XML side)
   """
-  schematron_root = xml.load(schematron_filename)
+  if isinstance(src, ElementTree.Element):
+    return src
+  if isinstance(src, bytes):
+    return xml.parse(src.decode("utf-8"))
+  if isinstance(src, Path):
+    return xml.load(src)
+  if isinstance(src, str):
+    return xml.load(src) if Path(src).is_file() else xml.parse(src)
+  if hasattr(src, "read"):
+    return xml.parse(src.read())
+  raise ValueError(f"unsupported schematron src type: {type(src)}")
+
+
+def validate_schematron(xml_root, schematron) -> int:
+  """
+  validates an ElementTree against a Schematron, given as an ElementTree,
+  file path, string, bytes or file-like object
+  """
+  schematron_root = load_schematron(schematron)
   namespaces = schema_namespaces(schematron_root)
   variables = schema_variables(xml_root, schematron_root, namespaces)
 
-  logger.info(f"validating against schematron '{schematron_filename.name}'", extra={"markup": True})
+  schematron_label = (
+    Path(schematron).name if isinstance(schematron, (str, Path)) else "in-memory schematron"
+  )
+  logger.info(f"validating against schematron '{schematron_label}'", extra={"markup": True})
   logger.debug("with variables:")
   logger.debug(json.dumps(variables, indent=2, default=str))
 
