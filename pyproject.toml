@@ -67,6 +67,7 @@ dev = [
   "types-Markdown",
   "types-xmltodict",
   "types-requests",
+  "twine>=6.0.0",
 ]
 
 [project.urls]
