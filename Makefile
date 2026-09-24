@@ -1,3 +1,5 @@
+-include ~/.yoker/Makefile
+
 -include .env
 
 # colors
@@ -23,30 +25,22 @@ ifeq ($(PROJECT_ENV),)
 PROJECT_ENV := $(PROJECT)
 endif
 
-PACKAGE_NAME=`cat .pypi-template | grep "^package_module_name" | cut -d":" -f2 | xargs`
 
 LOG_LEVEL?=INFO
 SILENT?=yes
 
-# if we're inside our own repo folder, use the local module folder, else cli cmd
-ifeq ($(wildcard pypi_template),) 
-	PYPI_TEMPLATE = pypi-template
-else 
-	PYPI_TEMPLATE = python -m pypi_template
-endif
 
-RUN_CMD?=LOG_LEVEL=$(LOG_LEVEL) python -m $(PACKAGE_NAME)
+RUN_CMD?=LOG_LEVEL=$(LOG_LEVEL) python -m schema_tools
 RUN_ARGS?=
 
 TEST_ENVS=$(addprefix $(PROJECT)-test-,$(PYTHON_VERSIONS))
 
 install: install-envs
-	
+
 install-envs: install-env-run install-env-docs install-env-test env
 	@echo "👷‍♂️ $(BLUE)installing requirements in $(PROJECT)$(NC)"
 	@pyenv local $(PROJECT_ENV)
 	@pip install -U pip > /dev/null
-	@pip install -U pypi-template > /dev/null
 	@pip install -U wheel twine setuptools build > /dev/null
 
 install-env-run:
@@ -65,7 +59,7 @@ install-env-docs:
 	@pyenv local $(PROJECT)-docs
 	@pip install -U pip > /dev/null
 	@pip install -r requirements.docs.txt > /dev/null
-	
+
 install-env-test: $(TEST_ENVS)
 
 $(PROJECT)-test-%:
@@ -96,19 +90,6 @@ upgrade:
 	@echo "👷‍♂️ $(BLUE)upgrading outdated packages$(NC)"
 	@pip list --outdated | tail +3 | cut -d " " -f 1 | xargs -n1 pip install -U
 
-# apply current pypi-template configuration, typically after upgrading it
-ifeq ($(wildcard pypi_template),)
-apply: env
-	$(PYPI_TEMPLATE) verbose apply
-else
-apply: RUN_CMD=$(PYPI_TEMPLATE)
-apply: RUN_ARGS=verbose apply
-apply: run
-endif
-
-# apply and reinstall
-update: apply uninstall-env-run install-env-run
-
 # env switching
 
 env-%:
@@ -118,12 +99,11 @@ env-%:
 env:
 	@echo "👷‍♂️ $(BLUE)activating project environment$(NC)"
 	@pyenv local $(PROJECT_ENV)
-	@$(PYPI_TEMPLATE) status > /dev/null
 
 env-test:
 	@echo "👷‍♂️ $(BLUE)activating test environments$(NC)"
 	@pyenv local $(TEST_ENVS)
-	
+
 # functional targets
 
 run: env-run
@@ -177,6 +157,15 @@ clean:
 
 .PHONY: dist docs test
 
-# include optional a personal/local touch
+# app specific targets
 
--include Makefile.mak
+local/schema:
+	mkdir -p $@
+	cd $@
+	curl -O https://docs.oasis-open.org/ubl/os-UBL-2.1/UBL-2.1.zip
+	unzip UBL-2.1.zip
+	curl -O https://docs.peppol.eu/poacc/billing/3.0/files/PEPPOL-EN16931-UBL.sch
+	curl -O https://docs.peppol.eu/poacc/billing/3.0/files/CEN-EN16931-UBL.sch
+
+web: env-run
+	gunicorn -k eventlet -w 1 schema_tools.web:app

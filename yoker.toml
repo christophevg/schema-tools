@@ -1,0 +1,8 @@
+[permissions]
+filesystem_paths = [ ".", "/tmp", "~/Workspace/agentic" ]
+
+[skills.directories]
+c3 = "../c3/skills"
+
+[tools.write]
+allow_overwrite = true
